@@ -1276,43 +1276,87 @@ XpraWindow.prototype.do_paint = function paint(x, y, width, height, coding, img_
 	}
 
 	try {
-		if (coding=="rgb32") {
+		if (coding=="void") {
+			painted(true);
+			this.may_paint_now();
+		}
+		else if (coding=="rgb32" || coding=="rgb24") {
 			this._non_video_paint(coding);
-			var img = this.offscreen_canvas_ctx.createImageData(width, height);
 			//show("options="+(options).toSource());
 			if (options!=null && options["zlib"]>0) {
 				//show("decompressing "+img_data.length+" bytes of "+coding+"/zlib");
 				img_data = new Zlib.Inflate(img_data).decompress();
 			} else if (options!=null && options["lz4"]>0) {
 				// in future we need to make sure that we use typed arrays everywhere...
-				var d;
+				let d;
 				if(img_data.subarray) {
 					d = img_data.subarray(0, 4);
 				} else {
 					d = img_data.slice(0, 4);
 				}
 				// will always be little endian
-				var length = d[0] | (d[1] << 8) | (d[2] << 16) | (d[3] << 24);
+				const length = d[0] | (d[1] << 8) | (d[2] << 16) | (d[3] << 24);
 				// decode the LZ4 block
-				var inflated = new Buffer(length);
-				var uncompressedSize;
+				const inflated = new Buffer(length);
+				let uncompressedSize;
 				if(img_data.subarray) {
 					uncompressedSize = LZ4.decodeBlock(img_data.subarray(4), inflated);
 				} else {
 					uncompressedSize = LZ4.decodeBlock(img_data.slice(4), inflated);
 				}
 				img_data = inflated.slice(0, uncompressedSize);
+				if (uncompressedSize==length) {
+					img_data = inflated;
+				}
+				else {
+					//this should not happen?
+					img_data = inflated.slice(0, uncompressedSize);
+				}
 			}
-			// set the imagedata rgb32 method
-			if(img_data.length > img.data.length) {
-				paint_error("data size mismatch: wanted "+img.data.length+", got "+img_data.length+", stride="+rowstride);
+			let target_stride = width*4;
+			this.debug("draw", "got ", img_data.length, "bytes of", coding, "to paint with stride", rowstride, ", target stride", target_stride);
+			if (coding=="rgb24") {
+				const uint = new Uint8Array(target_stride*height);
+				let i = 0,
+					j = 0,
+					k = 0,
+					l = img_data.length;
+				if (rowstride==width*3) {
+					//fast path
+					while (i<l) {
+						for (k=0; k<3; k++) {
+							uint[j++] = img_data[i++];
+						}
+						uint[j++] = 255;
+					}
+				}
+				else {
+					let psrc = 0,
+						pdst = 0;
+					for (i=0; i<height; i++) {
+						psrc = i*rowstride;
+						for (j=0; j<width; j++) {
+							uint[pdst++] = img_data[psrc++];
+							uint[pdst++] = img_data[psrc++];
+							uint[pdst++] = img_data[psrc++];
+							uint[pdst++] = 255;
+						}
+					}
+				}
+				rowstride = target_stride;
+				img_data = uint;
+			}
+			let img = null;
+			if (rowstride>target_stride) {
+				img = this.offscreen_canvas_ctx.createImageData(Math.round(rowstride/4), height);
 			}
 			else {
-				this.debug("draw", "got ", img_data.length, "to paint with stride", rowstride);
-				img.data.set(img_data);
-				this.offscreen_canvas_ctx.putImageData(img, x, y);
-				painted();
+				img = this.offscreen_canvas_ctx.createImageData(width, height);
 			}
+			img.data.set(img_data);
+			this.offscreen_canvas_ctx.clearRect(x, y, width, height);
+			this.offscreen_canvas_ctx.putImageData(img, x, y, 0, 0, width, height);
+			painted();
 			this.may_paint_now();
 		}
 		else if (coding=="jpeg" || coding=="png" || coding=="webp") {
