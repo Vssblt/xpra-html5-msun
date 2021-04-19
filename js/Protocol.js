@@ -196,19 +196,19 @@ XpraProtocol.prototype.process_receive_queue = function() {
   }
 };
 
-XpraProtocol.prototype.error =
-    function() {
+XpraProtocol.prototype.error = function() {
   if (console) {
     console.error.apply(console, arguments);
   }
-} XpraProtocol.prototype.log =
-        function() {
+};
+XpraProtocol.prototype.log =
+    function() {
   if (console) {
     console.log.apply(console, arguments);
   }
 }
 
-        XpraProtocol.prototype.do_process_receive_queue = function() {
+    XpraProtocol.prototype.do_process_receive_queue = function() {
   let i = 0, j = 0;
   if (this.header.length < 8 && this.rQ.length > 0) {
     // add from receive queue data to header until we get the 8 bytes we need:
