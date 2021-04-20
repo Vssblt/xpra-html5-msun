@@ -1101,7 +1101,7 @@ XpraClient.prototype._make_hello_base = function() {
     "compression_level" : 1,
     "mouse.show" : true,
     // packet encoders
-    "rencode" : (PyRencoder !== null && PyRencoder !== undefined),
+    "rencode" : false, //(PyRencoder !== null && PyRencoder !== undefined),
     "bencode" : true,
     "yaml" : false,
     "open-url" : this.open_url,
@@ -1324,6 +1324,7 @@ XpraClient.prototype.on_mousescroll = function(
 
 XpraClient.prototype._window_mouse_move = function(
     ctx, e, window) { ctx.do_window_mouse_move(e, window); };
+
 XpraClient.prototype.do_window_mouse_move = function(e, window) {
   if (this.server_readonly || this.mouse_grabbed || !this.connected) {
     return;
@@ -1393,6 +1394,28 @@ XpraClient.prototype.do_window_mouse_click = function(e, window, pressed) {
   }, send_delay);
 };
 
+XpraClient.prototype._window_scroll = function(e, offset, window) {
+  window.client.mousedown_event = e;
+  window.client.do_window_scroll(e, offset, window);
+};
+
+XpraClient.prototype.do_window_scroll = function(e, offset, window) {
+  var wid;
+  var btn_y;
+  if (window) {
+    wid = window.wid;
+  }
+  if (offset >= 0) {
+    btn_y = 5;
+  } else {
+    btn_y = 4;
+  }
+  const mouse = this.getMouse(e, window), x = Math.round(mouse.x),
+        y = Math.round(mouse.y);
+  this.send([ "button-action", wid, btn_y, true, [ x, y ], [ "mod2" ], [] ]);
+  this.send([ "button-action", wid, btn_y, false, [ x, y ], [ "mod2" ], [] ]);
+};
+
 XpraClient.prototype._window_mouse_scroll = function(
     ctx, e, window) { ctx.do_window_mouse_scroll(e, window); };
 
@@ -1455,6 +1478,8 @@ XpraClient.prototype.do_window_mouse_scroll = function(e, window) {
   const btn_y = (this.wheel_delta_y >= 0) ? 5 : 4;
   while (wx >= 120) {
     wx -= 120;
+    console.log(
+        [ "button-action", wid, btn_x, true, [ x, y ], modifiers, buttons ]);
     this.send(
         [ "button-action", wid, btn_x, true, [ x, y ], modifiers, buttons ]);
     this.send(
@@ -1462,6 +1487,8 @@ XpraClient.prototype.do_window_mouse_scroll = function(e, window) {
   }
   while (wy >= 120) {
     wy -= 120;
+    console.log(
+        [ "button-action", wid, btn_y, true, [ x, y ], modifiers, buttons ]);
     this.send(
         [ "button-action", wid, btn_y, true, [ x, y ], modifiers, buttons ]);
     this.send(
@@ -2189,7 +2216,7 @@ XpraClient.prototype._process_new_tray = function(packet, ctx) {
       ctx, mycanvas, wid, x, y, w, h, metadata, false, true, {},
       ctx._tray_geometry_changed, ctx._window_mouse_move,
       ctx._window_mouse_down, ctx._window_mouse_up, ctx._window_mouse_scroll,
-      ctx._tray_set_focus, ctx._tray_closed);
+      ctx._window_scroll, ctx._tray_set_focus, ctx._tray_closed);
   ctx.send_tray_configure(wid);
 };
 XpraClient.prototype.send_tray_configure = function(wid) {
@@ -2244,7 +2271,7 @@ XpraClient.prototype._new_window = function(
       this, mycanvas, wid, x, y, w, h, metadata, override_redirect, false,
       client_properties, this._window_geometry_changed, this._window_mouse_move,
       this._window_mouse_down, this._window_mouse_up, this._window_mouse_scroll,
-      this._window_set_focus, this._window_closed);
+      this._window_scroll, this._window_set_focus, this._window_closed);
   if (win && !override_redirect && win.metadata["window-type"] == "NORMAL") {
     const decodedTitle = decodeURIComponent(escape(win.title));
     const trimmedTitle = Utilities.trimString(decodedTitle, 30);

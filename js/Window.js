@@ -23,7 +23,7 @@
 function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata,
                     override_redirect, tray, client_properties, geometry_cb,
                     mouse_move_cb, mouse_down_cb, mouse_up_cb, mouse_scroll_cb,
-                    set_focus_cb, window_closed_cb, htmldiv) {
+                    scroll_cb, set_focus_cb, window_closed_cb, htmldiv) {
   // use me in jquery callbacks as we lose 'this'
   var me = this;
   // there might be more than one client
@@ -55,6 +55,7 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata,
   this.mouse_up_cb = null;
   this.mouse_scroll_cb = null;
   this.window_closed_cb = null;
+  this.scroll_cb = null;
 
   // xpra specific attributes:
   this.wid = wid;
@@ -94,6 +95,7 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata,
   this.mouse_down_cb = mouse_down_cb || null;
   this.mouse_up_cb = mouse_up_cb || null;
   this.mouse_scroll_cb = mouse_scroll_cb || null;
+  this.scroll_cb = scroll_cb || null;
   //统一使用pointerevent处理鼠标事件
   //	jQuery(this.canvas).mousedown(function (e) {
   //		me.on_mousedown(e);
@@ -130,20 +132,20 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata,
     jQuery(this.div).addClass("border");
     // add a title bar to this window if we need to
     // create header
-    jQuery(this.div).prepend('<div id="head' + String(wid) +
-                             '" class="windowhead"> ' +
-                             '<span class="windowicon"><img id="windowicon' +
-                             String(wid) + '" /></span> ' +
-                             '<span class="windowtitle" id="title' +
-                             String(wid) + '">' + this.title + '</span> ' +
-                             '<span class="windowbuttons"> ' +
-                             //			'<span id="minimize' + String(wid) + '"><img
-                             //src="icons/minimize.png" /></span> '+
-                             '<span id="maximize' + String(wid) +
-                             '"><img src="icons/maximize.png" /></span> ' +
-                             '<span id="close' + String(wid) +
-                             '"><img src="icons/close.png" /></span> ' +
-                             '</span></div>');
+    jQuery(this.div).prepend(
+        '<div id="head' + String(wid) + '" class="windowhead"> ' +
+        '<span class="windowicon"><img id="windowicon' + String(wid) +
+        '" /></span> ' +
+        '<span class="windowtitle" id="title' + String(wid) + '">' +
+        this.title + '</span> ' +
+        '<span class="windowbuttons"> ' +
+        //			'<span id="minimize' + String(wid) +
+        //'"><img src="icons/minimize.png" /></span> '+
+        '<span id="maximize' + String(wid) +
+        '"><img src="icons/maximize.png" /></span> ' +
+        '<span id="close' + String(wid) +
+        '"><img src="icons/close.png" /></span> ' +
+        '</span></div>');
     // make draggable
     jQuery(this.div).draggable({cancel : "canvas"});
     jQuery(this.div).on("dragstart", function(ev, ui) {
@@ -217,15 +219,66 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata,
   this.pointer_down = -1;
   this.pointer_last_x = 0;
   this.pointer_last_y = 0;
+
+  var div = 10;
+  var pointer_a = null;
+  var pointer_b = null;
+  var pointer_count = 0;
+  var last_distance = 0;
+  var distance = function(a_x, b_x, a_y, b_y) {
+    return Math.sqrt(Math.pow(a_x - b_x, 2) + Math.pow(a_y - b_y, 2));
+  };
+
   if (window.PointerEvent) {
-    this.canvas.addEventListener("pointerdown",
-                                 function(ev) { me.on_mousedown(ev); });
-    this.canvas.addEventListener("pointermove",
-                                 function(ev) { me.on_mousemove(ev); });
-    this.canvas.addEventListener("pointerup",
-                                 function(ev) { me.on_mouseup(ev); });
-    this.canvas.addEventListener("pointercancel",
-                                 function(ev) { me.on_mouseup(ev); });
+    this.canvas.addEventListener("pointerdown", function(ev) {
+      pointer_count++;
+      if (pointer_count >= 2) {
+        pointer_b = ev;
+        me.on_mouseup(pointer_a);
+        last_distance =
+            distance(pointer_a.x, pointer_b.x, pointer_a.y, pointer_b.y);
+      } else {
+        pointer_a = ev;
+        me.on_mousedown(ev);
+      }
+    });
+    this.canvas.addEventListener("pointermove", function(ev) {
+      if (pointer_count >= 2) {
+        if (pointer_b.pointerId == ev.pointerId) {
+          pointer_b = ev;
+        } else if (pointer_a.pointerId == ev.pointerId) {
+          pointer_a = ev;
+        }
+        var current_distance =
+            distance(pointer_a.x, pointer_b.x, pointer_a.y, pointer_b.y);
+        var segment = (current_distance - last_distance) / div;
+
+        if (segment < 0) {
+          segment = Math.ceil(segment);
+          for (var i = 0; i < -segment; i++) {
+            me.on_scroll(pointer_a, -1);
+          }
+        } else {
+          segment = Math.floor(segment);
+          for (var i = 0; i < segment; i++) {
+            me.on_scroll(pointer_a, 1);
+          }
+        }
+        last_distance += segment * div;
+
+      } else {
+        me.on_mousemove(ev);
+      }
+    });
+    this.canvas.addEventListener("pointerup", function(ev) {
+      pointer_count--;
+      last_distance = 0;
+      me.on_mouseup(ev);
+    });
+    this.canvas.addEventListener("pointercancel", function(ev) {
+      pointer_count--;
+      me.on_mouseup(ev);
+    });
     this.canvas.addEventListener("pointerout", function(ev) {});
   }
 
@@ -369,6 +422,12 @@ XpraWindow.prototype.on_mouseup = function(e) {
 
 XpraWindow.prototype.on_mousescroll = function(e) {
   this.mouse_scroll_cb(this.client, e, this);
+  e.preventDefault();
+  return false;
+};
+
+XpraWindow.prototype.on_scroll = function(e, offset) {
+  this.scroll_cb(e, offset, this);
   e.preventDefault();
   return false;
 };

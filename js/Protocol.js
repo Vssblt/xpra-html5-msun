@@ -382,6 +382,7 @@ XpraProtocol.prototype.log =
     let packet = null;
     try {
       if (proto_flags == 1) {
+        console.log(packet_data);
         packet = PyRencoder.decode(Buffer.from(packet_data), 'binary');
       } else {
         packet = bdecode(packet_data);
