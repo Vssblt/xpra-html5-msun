@@ -14,6 +14,17 @@
 
 "use strict";
 
+/////////////////////////////////////////////////////////////////
+// global
+var div = 10;
+var pointer_a = null;
+var pointer_b = null;
+var pointer_count = 0;
+var last_distance = 0;
+var distance = function(
+    a_x, b_x, a_y,
+    b_y) { return Math.sqrt(Math.pow(a_x - b_x, 2) + Math.pow(a_y - b_y, 2)); };
+/////////////////////////////////////////////////////////////////
 /**
  * This is the class representing a window we draw on the canvas.
  * It has a geometry, it may have borders and a top bar.
@@ -219,15 +230,6 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata,
   this.pointer_down = -1;
   this.pointer_last_x = 0;
   this.pointer_last_y = 0;
-
-  var div = 10;
-  var pointer_a = null;
-  var pointer_b = null;
-  var pointer_count = 0;
-  var last_distance = 0;
-  var distance = function(a_x, b_x, a_y, b_y) {
-    return Math.sqrt(Math.pow(a_x - b_x, 2) + Math.pow(a_y - b_y, 2));
-  };
 
   if (window.PointerEvent) {
     this.canvas.addEventListener("pointerdown", function(ev) {
