@@ -1478,8 +1478,6 @@ XpraClient.prototype.do_window_mouse_scroll = function(e, window) {
   const btn_y = (this.wheel_delta_y >= 0) ? 5 : 4;
   while (wx >= 120) {
     wx -= 120;
-    console.log(
-        [ "button-action", wid, btn_x, true, [ x, y ], modifiers, buttons ]);
     this.send(
         [ "button-action", wid, btn_x, true, [ x, y ], modifiers, buttons ]);
     this.send(
@@ -1487,8 +1485,6 @@ XpraClient.prototype.do_window_mouse_scroll = function(e, window) {
   }
   while (wy >= 120) {
     wy -= 120;
-    console.log(
-        [ "button-action", wid, btn_y, true, [ x, y ], modifiers, buttons ]);
     this.send(
         [ "button-action", wid, btn_y, true, [ x, y ], modifiers, buttons ]);
     this.send(
