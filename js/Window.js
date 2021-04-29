@@ -281,7 +281,10 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata,
       pointer_count--;
       me.on_mouseup(ev);
     });
-    this.canvas.addEventListener("pointerout", function(ev) {});
+    this.canvas.addEventListener("pointerout", function(ev) {
+      pointer_count = 0;
+      me.on_mouseup(ev);
+    });
   }
 
   // adapt to screen size if needed (ie: shadow / desktop windows):
