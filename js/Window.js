@@ -234,6 +234,13 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata,
   if (window.PointerEvent) {
     this.canvas.addEventListener("pointerdown", function(ev) {
       pointer_count++;
+      if (pointer_count < 0) pointer_count = 0;
+	
+	    if (pointer_count >= 2 && ev.pointerType == "mouse")
+	    {
+		    pointer_count = 1;
+	    }
+
       if (pointer_count >= 2) {
         pointer_b = ev;
         me.on_mouseup(pointer_a);
@@ -245,6 +252,12 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata,
       }
     });
     this.canvas.addEventListener("pointermove", function(ev) {
+      if (pointer_count < 0) pointer_count = 0;
+	if (pointer_count >= 2 && ev.pointerType == "mouse")
+	    {
+		    pointer_count = 0;
+	    }
+	    
       if (pointer_count >= 2) {
         if (pointer_b.pointerId == ev.pointerId) {
           pointer_b = ev;
@@ -274,11 +287,13 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata,
     });
     this.canvas.addEventListener("pointerup", function(ev) {
       pointer_count--;
+      if (pointer_count < 0) pointer_count = 0;
       last_distance = 0;
       me.on_mouseup(ev);
     });
     this.canvas.addEventListener("pointercancel", function(ev) {
       pointer_count--;
+      if (pointer_count < 0) pointer_count = 0;
       me.on_mouseup(ev);
     });
     this.canvas.addEventListener("pointerout", function(ev) {
