@@ -1,20 +1,22 @@
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="zh" lang="zh">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 	<head>
 
 		<!--
 			Copyright (c) 2013-2020 Antoine Martin <antoine@xpra.org>
 			Copyright (c) 2014 Joshua Higgins <josh@kxes.net>
 			Licensed under MPL 2.0
- 		-->
+		-->
 
-		<title>Msunsoft Medical Imaging Viewer -- 众阳PACS医学影像浏览器</title>
+		<title>xpra websockets client</title>
 		<meta charset="utf-8">
-		<meta name="renderer" content="webkit">
 		<meta name="description" content="xpra websockets client">
-		<link rel="shortcut icon" type="image/png" href="./favicon.png" id="favicon">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="mobile-web-app-capable" content="yes">
+		<link rel="shortcut icon" type="image/png" href="favicon.png" id="favicon">
 
 		<link rel="stylesheet" href="css/client.css">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<link rel="stylesheet" href="css/spinner.css">
 
 		<script type="text/javascript" src="js/lib/es6-shim.js"></script>
@@ -23,7 +25,9 @@
 		<script type="text/javascript" src="js/lib/jquery.js"></script>
 		<script type="text/javascript" src="js/lib/jquery-ui.js"></script>
 		<script type="text/javascript" src="js/lib/jquery.ba-throttle-debounce.js"></script>
+		<script type="text/javascript" src="js/lib/jquery-transform-draggable.js"></script>
 
+		<script type="text/javascript" src="js/lib/rencode.js"></script>
 		<script type="text/javascript" src="js/lib/bencode.js"></script>
 		<script type="text/javascript" src="js/lib/zlib.js"></script>
 		<script type="text/javascript" src="js/lib/lz4.js"></script>
@@ -42,8 +46,7 @@
 
 		<script type="text/javascript" src="js/lib/FileSaver.js"></script>
 		<script type="text/javascript" src="js/lib/jszip.js"></script>
-
-		<script type="text/javascript" src="js/lib/pyrencoder.js"></script>
+		<script type="text/javascript" src="js/lib/detect-zoom.js"></script>
 
 		<script type="text/javascript" src="js/Keycodes.js"></script>
 		<script type="text/javascript" src="js/Protocol.js"></script>
@@ -74,13 +77,30 @@
 			<progress id="progress-bar" max="100" value="10"></progress>
 		</div>
 
+		<div id="login-overlay">
+			<div id="login-box">
+				<div id="login-innerbox">
+					<span id="login-header"></span>
+					<br />
+					<div id="password-box">
+						<input title="Password" type="password" id="password" autocomplete="current-password" placeholder="Password" size="16" maxlength="256">
+					</div>
+					<br />
+					<div id="login-buttons">
+						<a class="login-button" role="button" onclick="login_cancel();">Cancel</a>
+						<a class="login-button" role="button" onclick="login_connect();">Connect</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<div id="screen" style="width: 100%; height:100%;">
-			<div id="float_menu" style="display: none;">
+			<div id="float_menu">
 				<ul class="Menu -horizontal">
 					<li class="-hasSubmenu -noChevron">
 						<a href="#" title="Xpra" class="noDrag" data-icon="menu"></a>
 						<ul id="menu_list">
-							<li  class="-hasSubmenu" >
+							<li class="-hasSubmenu" >
 								<a data-icon="apps" href="#">Start</a>
 								<ul id="startmenu">
 								</ul>
@@ -127,12 +147,12 @@
 						<a href="#" id="sound_button" title="Audio" data-icon="volume_off"></a>
 					</li>
 				</ul>
-				<div id="float_tray"  class="menu-divright"></div>
+				<div id="float_tray" class="menu-divright"></div>
 			</div>
-			<img id="shadow_pointer">
+			<img id="shadow_pointer" alt="shadow pointer">
 		</div>
 
-		<div class="notifications" style="display: none;">
+		<div class="notifications">
 		</div>
 
 		<form id="upload_form">
@@ -141,7 +161,7 @@
 
 		<div id="about">
 			<h2>Xpra HTML5 Client</h2>
-			<h3>Version 4.1</h3>
+			<h3>Version 5.0</h3>
 			<span>
 				Copyright (c) 2013-2020 Antoine Martin &lt;antoine@xpra.org&gt;
 				<br />
@@ -152,7 +172,7 @@
 			<span class="info">
 			This code is available under the <a href="./LICENSE">Mozilla Public License Version 2.0</a>
 			<br />
-			For more information, see <a href="https://xpra.org/trac/wiki/Clients/HTML5">xpra HTML5 wiki</a>.
+			For more information, see <a href="https://github.com/Xpra-org/xpra-html5">xpra HTML5 project</a>.
 			</span>
 		</div>
 
@@ -160,12 +180,13 @@
 			<h2>Session Information</h2>
 			<h3>Connection Data</h3>
 			<table id='sessiondata'>
+			<caption>Session Connection Data Information</caption>
 			<tr>
-				<th>Server Endpoint</th>
+				<th scope="row">Server Endpoint</th>
 				<td id="endpoint"></td>
 			</tr>
 			<tr>
-				<th>Server Display</th>
+				<th scope="row">Server Display</th>
 				<td id="server_display"></td>
 			</tr>
 			<!-- <tr>
@@ -173,11 +194,11 @@
 				<td id="server_hostname"></td>
 			</tr> -->
 			<tr>
-				<th>Server Platform</th>
+				<th scope="row">Server Platform</th>
 				<td id="server_platform"></td>
 			</tr>
 			<tr>
-				<th>Server Load</th>
+				<th scope="row">Server Load</th>
 				<td id="server_load"></td>
 			</tr>
 			<!-- <tr>
@@ -185,15 +206,15 @@
 				<td id="session_started"></td>
 			</tr> -->
 			<tr>
-				<th>Session Connected</th>
+				<th scope="row">Session Connected</th>
 				<td id="session_connected"></td>
 			</tr>
 			<tr>
-				<th>Server Latency</th>
+				<th scope="row">Server Latency</th>
 				<td id="server_latency"></td>
 			</tr>
 			<tr>
-				<th>Client Latency</th>
+				<th scope="row">Client Latency</th>
 				<td id="client_latency"></td>
 			</tr>
 			</table>
@@ -214,11 +235,9 @@
 			</form>
 		</div>
 
-		
 		<div>
 			<textarea id="pasteboard" style="display: block; position: absolute; left: -99em;"></textarea>
 		</div>
-		
 
 		<div class="simple-keyboard" style="display: block; position: fixed; bottom: 0; width: 100%">
 		</div>
@@ -242,6 +261,38 @@
 				}
 				return ["true", "on", "1", "yes", "enabled"].indexOf(String(v).toLowerCase())!==-1;
 			};
+			const getintparam = function(prop, default_value) {
+				let v = Utilities.getparam(prop);
+				if (v==null && prop in default_settings) {
+					v = default_settings[prop];
+				}
+				try {
+					v = parseInt(v)
+				}
+				catch(e) {
+					return default_value;
+				}
+				if (v===null || isNaN(v)) {
+					return default_value;
+				}
+				return v;
+			}
+			const getfloatparam = function(prop, default_value) {
+				let v = Utilities.getparam(prop);
+				if (v==null && prop in default_settings) {
+					v = default_settings[prop];
+				}
+				try {
+					v = parseFloat(v)
+				}
+				catch(e) {
+					return default_value;
+				}
+				if (v===null || isNaN(v)) {
+					return default_value;
+				}
+				return v;
+			}
 
 			const float_menu_item_size = 30;
 			const float_menu_padding = 20;
@@ -254,8 +305,30 @@
 				Utilities.clog.apply(Utilities, arguments);
 			};
 
+			//start calculating the fps asap:
+			let animation_times = [];
+			let fps = -1;
+			let vrefresh = -1;
+			function animation_cb(now) {
+				let l = animation_times.push(now);
+				if (l > 100) {
+					animation_times.shift();
+				}
+				let t0 = animation_times[0];
+				if (now>t0) {
+					fps = Math.floor(1000 * (l-1) / (now - t0));
+				}
+				cdebug("draw", "animation_cb", now, "fps", fps, "vrefresh", vrefresh);
+				if (vrefresh<0) {
+					window.requestAnimationFrame(animation_cb);
+				}
+			};
+			window.requestAnimationFrame(animation_cb);
+
+
 			function confirm_shutdown_server() {
 				if (confirm("Shutdown this server?")) {
+					client.reconnect = false;
 					client.send(["shutdown-server"]);
 				}
 			}
@@ -292,12 +365,20 @@
 				hide_sessioninfo();
 			});
 
-			$("#pasteboard").blur(function() {
-				//force focus back to our capture widget:
-				if (client.capture_keyboard) {
-					$("#pasteboard").focus();
-				}
-			});
+			function enable_clipboard_autofocus() {
+				$("#pasteboard").blur(function() {
+					//force focus back to our capture widget:
+					if (client.capture_keyboard) {
+						$("#pasteboard").focus();
+					}
+				});
+				const pasteboard_element = $("#pasteboard");
+				pasteboard_element.prop('autofocus');
+				pasteboard_element.focus();
+			}
+			function cancel_clipboard_autofocus() {
+				$("#pasteboard").removeAttr('autofocus');
+			}
 
 			function show_about(event) {
 				$('.menu-content').slideUp();
@@ -353,8 +434,8 @@
 					$("#client_latency").html(client.client_ping_latency);
 				//TODO:
 				// * add packet counter to Protocol.js
-	  			//"Packets Received"
-	  			//"Encoding + Compression"
+				//"Packets Received"
+				//"Encoding + Compression"
 				}, false);
 
 
@@ -364,15 +445,12 @@
 			}
 			function hide_bugreport() {
 				$('#bugreport').hide();
-				//focus back on our capture widget:
-				const pasteboard_element = $("#pasteboard");
-				pasteboard_element.prop('autofocus');
-				pasteboard_element.focus();
+				enable_clipboard_autofocus();
 			}
 			function show_bugreport(event) {
 				//stop capturing input, so we can interact with the bugreport form:
 				client.capture_keyboard = false;
-				$("#pasteboard").removeAttr('autofocus');
+				cancel_clipboard_autofocus();
 				//hide menu:
 				$('.menu-content').slideUp();
 				$('#bugreport').show();
@@ -404,9 +482,43 @@
 				});
 				hide_bugreport();
 			}
+			const password_input = document.getElementById("password");
+			let login_callback = null;
+			function login_cancel() {
+				$("#login-overlay").fadeOut();
+				password_input.removeEventListener("keydown", password_special_keys);
+				password_input.value = "";
+				login_callback(null);
+			}
+			function login_connect() {
+				$("#login-overlay").fadeOut();
+				const password = password_input.value;
+				password_input.removeEventListener("keydown", password_special_keys);
+				password_input.value = "";
+				login_callback(password);
+			}
+			function password_special_keys(e) {
+				if (!e) {
+					e = window.event;
+				}
+				if (e.keyCode == 13) {
+					e.preventDefault();
+					login_connect();
+				}
+				if (e.keyCode == 27) {
+					e.preventDefault();
+					login_cancel();
+				}
+			}
+			function password_prompt_fn(heading, callback) {
+				login_callback = callback;
+				$("#login-overlay").fadeIn();
+				$("#login-header").text(heading);
+				password_input.focus();
+				password_input.addEventListener("keydown", password_special_keys);
+			}
 
 			let touchaction_scroll = true;
-
 			function toggle_touchaction() {
 				touchaction_scroll = !touchaction_scroll;
 				set_touchaction();
@@ -437,12 +549,25 @@
 				const https = document.location.protocol=="https:";
 
 				// look at url parameters
-				const username = getparam("username") || null;
-				const password = getparam("password") || null;
+				const username = getparam("username") || getparam("handle") || null;
+				const passwords = [];
+				for (let i=0; i<10; i++) {
+					let password = getparam("password"+i) || getparam("token"+i) || null;
+					if (!password && i==0) {
+						//try with no suffix:
+						password = getparam("password") || getparam("token") || null;
+					}
+					if (password) {
+						passwords.push(password);
+					}
+					else {
+						break;
+					}
+				}
 				const sound = getboolparam("sound", true) || null;
 				const audio_codec = getparam("audio_codec") || null;
 				const encoding = getparam("encoding") || null;
-				const bandwidth_limit = getparam("bandwidth_limit") || 0;
+				const bandwidth_limit = getintparam("bandwidth_limit", 0) || 0;
 				const action = getparam("action") || "connect";
 				const display = getparam("display") || "";
 				const shadow_display = getparam("shadow_display") || "";
@@ -463,7 +588,7 @@
 				const remote_logging = getboolparam("remote_logging", true);
 				const insecure = getboolparam("insecure", false);
 				const ignore_audio_blacklist = getboolparam("ignore_audio_blacklist", false);
-				const keyboard = getboolparam("keyboard", Boolean(!window.onmousemove));
+				const keyboard = getboolparam("keyboard", Utilities.isMobile());
 				const clipboard = getboolparam("clipboard", true);
 				const printing = getboolparam("printing", true);
 				const file_transfer = getboolparam("file_transfer", true);
@@ -475,13 +600,28 @@
 				const floating_menu = getboolparam("floating_menu", true);
 				const toolbar_position = getparam("toolbar_position");
 				const autohide = getboolparam("autohide", false);
-				const dpi = getparam("dpi", 192);
+				const override_width = getfloatparam("override_width", window.innerWidth);
+				vrefresh = getintparam("vrefresh", -1);
+				if (vrefresh<0 && fps>=30) {
+					vrefresh = fps;
+				}
 				
 				try {
 					sessionStorage.removeItem("password");
 				}
 				catch (e) {
 					//ignore
+				}
+				try {
+					sessionStorage.removeItem("token");
+				}
+				catch (e) {
+					//ignore
+				}
+
+				var scale = 1;
+				if (window.innerWidth!==override_width) {
+					scale = override_width/window.innerWidth;
 				}
 
 				let progress_timer;
@@ -548,9 +688,11 @@
 				client.on_connection_progress = connection_progress;
 				client.scroll_reverse_x = scroll_reverse_x;
 				client.scroll_reverse_y = scroll_reverse_y;
+				client.vrefresh = vrefresh;
+				client.scale = scale;
 				//example overrides:
 				//client.HELLO_TIMEOUT = 3600000;
-				client.PING_TIMEOUT = 60000;
+				//client.PING_TIMEOUT = 60000;
 				//client.PING_GRACE = 30000;
 				//client.PING_FREQUENCY = 15000;
 
@@ -570,25 +712,26 @@
 					};
 				}
 
-				// mediasource video
 				if(video) {
-					client.supported_encodings.push("h264");
+					// broadway h264 decoder:
+					client.check_encodings.push("h264");
 					if (JSMpeg && JSMpeg.Renderer && JSMpeg.Decoder) {
+						//TODO: should be moved to 'check_encodings'
+						//and added to the decode worker:
 						client.supported_encodings.push("mpeg1");
 					}
 					if(mediasource_video) {
 						client.supported_encodings.push("vp8+webm", "h264+mp4", "mpeg4+mp4");
 					}
 				}
-				else if(encoding && (encoding !== "auto")) {
-					// the primary encoding can be set
-					client.enable_encoding(encoding);
+				if (encoding) {
+					// the primary encoding
+					client.set_encoding(encoding);
 				}
-				// encodings can be disabled like so
-				// client.disable_encoding("h264");
+
 				if(action && (action!="connect")) {
 					const sns = {
-							"mode" 	: action,
+							"mode"	: action,
 					};
 					if (exit_with_children) {
 						sns["exit-with-children"] = true;
@@ -625,16 +768,12 @@
 					client.keyboard_layout = keyboard_layout;
 				}
 
-				client.dpi = dpi;
 				// check for username and password
 				if(username) {
 					client.username = username;
 				}
-				if(password) {
-					client.password = password;
-				}
-				if(encoding) {
-					client.enable_encoding(encoding);
+				if(passwords) {
+					client.passwords = passwords;
 				}
 				if (action=="connect") {
 					client.server_display = display;
@@ -644,17 +783,19 @@
 				}
 
 				// check for encryption parameters
-				if(encryption && encryption.toLowerCase()!="no" && encryption.toLowerCase()!="false") {
-					client.encryption = "AES";
+				if(encryption && ["0", "false", "no", "disabled"].indexOf(encryption.toLowerCase())<0) {
+					client.encryption = encryption.toUpperCase();
 					if(key) {
 						client.encryption_key = key;
 					}
+					console.log("encryption:", client.encryption);
 				}
 
 				// attach a callback for when client closes
 				const debug_main = getboolparam("debug_main", false);
 				if(!debug_main) {
 					client.callback_close = function(reason) {
+						clog("closing: ", reason);
 						if(submit) {
 							let message = "Connection closed (socket closed)";
 							if(reason) {
@@ -715,7 +856,6 @@
 									"floating_menu"		: floating_menu,
 									"toolbar_position"	: toolbar_position,
 									"autohide"			: autohide,
-									"dpi" : dpi,
 									};
 							for (let i=0; i<client.debug_categories.length; i++) {
 								const category = client.debug_categories[i];
@@ -731,7 +871,7 @@
 								const value = props[name];
 								add_prop(name, value);
 							}
-							//window.location=url;
+							window.location=url;
 						} else {
 							// if we didn't submit through the form, silently redirect to the connect gui
 							window.location="connect.html";
@@ -748,15 +888,15 @@
 			}
 
 			function init_tablet_input(client) {
-			   	//keyboard input for tablets:
+				//keyboard input for tablets:
 				const pasteboard = $('#pasteboard');
 				pasteboard.on("input", function(e) {
 					const txt = pasteboard.val();
 					pasteboard.val("");
-			   		cdebug("keyboard", "oninput: '"+txt+"'");
-			   		if (!client.topwindow) {
-			   			return;
-			   		}
+					cdebug("keyboard", "oninput: '"+txt+"'");
+					if (!client.topwindow) {
+						return;
+					}
 					for (let i = 0; i < txt.length; i++) {
 						const str = txt[i];
 						const keycode = str.charCodeAt(0);
@@ -770,22 +910,22 @@
 								client._check_browser_language(key_language);
 							}
 						}
-				   		try {
-				   			const modifiers = [];
-				   			const keyval = keycode;
-				   			const group = 0;
+						try {
+							const modifiers = [];
+							const keyval = keycode;
+							const group = 0;
 							let packet = ["key-action", client.topwindow, keyname, true, modifiers, keyval, str, keycode, group];
 							cdebug("keyboard", packet);
 							client.send(packet);
 							packet = ["key-action", client.topwindow, keyname, false, modifiers, keyval, str, keycode, group];
 							cdebug("keyboard", packet);
 							client.send(packet);
-				   		}
-				   		catch (e) {
-					   		client.exc(e, "input handling error");
-				   		}
-			   		}
-			   	});
+						}
+						catch (e) {
+							client.exc(e, "input handling error");
+						}
+					}
+				});
 			}
 
 			function init_clipboard(client) {
@@ -883,7 +1023,7 @@
 					may_set_clipboard();
 				});
 				$("#screen").keypress(function() {
-  					may_set_clipboard();
+					may_set_clipboard();
 				});
 			}
 
@@ -893,7 +1033,7 @@
 					onKeyPress: button => onKeyPress(button),
 					onKeyReleased: button => onKeyReleased(button),
 					display : {
-						".com" 	: "|",
+						".com" : "|",
 						"{tab}" : "tab",
 						"{lock}" : "lock",
 						"{shift}" : "shift",
@@ -903,7 +1043,7 @@
 					},
 				});
 				function onChange(input){
-					console.log("Input changed", input);
+					clog("Input changed", input);
 				}
 				function onKeyPress(button){
 					forward_key(true, button);
@@ -913,10 +1053,10 @@
 				}
 				function forward_key(pressed, button) {
 					let key = {
-						"{bksp}" 	: "Backspace",
-						"{enter}" 	: "Return",
-						"{space}" 	: "Space",
-						"{tab}" 	: "Tab",
+						"{bksp}"	: "Backspace",
+						"{enter}"	: "Return",
+						"{space}"	: "Space",
+						"{tab}"		: "Tab",
 						"{lock}"	: "CapsLock",
 						"{shift}"	: "Shift",
 						".com"		: "|",
@@ -929,7 +1069,7 @@
 					};
 					client.do_keyb_process(pressed, e);
 				}
-				const keyboard = getboolparam("keyboard", Boolean(!window.onmousemove));
+				const keyboard = getboolparam("keyboard", Utilities.isMobile());
 				if (!keyboard) {
 					$('.simple-keyboard').hide();
 					$('#keyboard_button').css('color', '#777');
@@ -1107,7 +1247,9 @@
 
 			function expand_float_menu(){
 				const expanded_width = (float_menu_item_size*5);
-				document.getElementById('float_menu').style.width = expanded_width +'px';
+				const float_menu = document.getElementById('float_menu');
+				float_menu.style.display = "inline-block";
+				float_menu.style.width = expanded_width +'px';
 				$('#float_menu').children().show();
 				if(client){
 					client.reconfigure_all_trays();
@@ -1118,46 +1260,51 @@
 				document.getElementById('float_menu').style.width ='0px'; $('#float_menu').children().hide();
 			}
 
-			let client;
-			function init_page() {
+			function init_float_menu() {
+				const toolbar_position = getparam("toolbar_position");
 				const floating_menu = getboolparam("floating_menu", true);
 				const autohide = getboolparam("autohide", false);
-				const toolbar_position = getparam("toolbar_position");
 				const float_menu_element = $('#float_menu');
 				if (!floating_menu) {
-					float_menu_element.hide();
+					//nothing to do, it starts hidden
+					return;
+				}
+				float_menu_element.fadeIn();
+				if(client){
+					client.toolbar_position = toolbar_position;
+				}
+				if (autohide) {
+					float_menu_element.on('mouseover', expand_float_menu);
+					float_menu_element.on('mouseout', retract_float_menu);
+					// Expand and retract the floating menu so it
+					// is correctly positioned and collapsed
+					expand_float_menu();
+					retract_float_menu();
 				}
 				else {
-					var toolbar_width = float_menu_element.width();
-					var left = 0;
-					var top = float_menu_element.offset().top || 0;
-					var screen_width = $('#screen').width();
-					if (toolbar_position=="top-left") {
-						//no calculations needed
-					}
-					else if (toolbar_position=="top") {
-						left = screen_width/2-toolbar_width/2;
-					}
-					else if (toolbar_position=="top-right") {
-						left = screen_width-toolbar_width-100;
-					}
-					float_menu_element.offset({ top: top, left: left });
-
-					if (autohide) {
-						float_menu_element.on('mouseover', expand_float_menu);
-						float_menu_element.on('mouseout', retract_float_menu);
-					}
-					else {
-						expand_float_menu();
-					}
+					expand_float_menu();
 				}
+			}
 
+			let client;
+			function init_page() {
 				const touchaction = getparam("touchaction") || "scroll";
 				touchaction_scroll = touchaction == "scroll";
 				set_touchaction();
 				
 				client = init_client();
-				client.connect();
+				client.on_connect = function() {
+					init_float_menu();
+					enable_clipboard_autofocus();
+					client.capture_keyboard = true;
+				};
+				const blocked_hosts = (getparam("blocked-hosts") || "").split(",");
+				if (blocked_hosts.indexOf(client.host.toLowerCase())>=0) {
+					client.callback_close("connection to host '"+(client.host.replace(/[^A-Za-z0-9\.\:]/g, ''))+"' blocked");
+				}
+				else {
+					client.connect();
+				}
 
 				//from now on, send log and debug to client function
 				//which may forward it to the server once connected:
@@ -1171,12 +1318,12 @@
 				if (client.clipboard_enabled) {
 					init_clipboard(client);
 				}
-			   	if (client.file_transfer) {
-			   		init_file_transfer(client);
-			   	}
-			   	else {
-			   		$('upload_link').removeAttr('href');
-			   	}
+				if (client.file_transfer) {
+					init_file_transfer(client);
+				}
+				else {
+					$('upload_link').removeAttr('href');
+				}
 				init_keyboard(client);
 				init_clock(client, getboolparam("clock", true));
 				init_audio(client);
@@ -1194,6 +1341,7 @@
 						}
 					}
 				});
+				client.password_prompt_fn = password_prompt_fn;
 				$('#fullscreen').on('click', function (e) {
 					toggle_fullscreen();
 				});
@@ -1228,6 +1376,7 @@
 				xhr.open("GET", "./default-settings.txt");
 				xhr.onload = function() {
 					const tmp_default_settings = Utilities.parseINIString(xhr.responseText);
+					clog("network", "got default settings:", tmp_default_settings);
 					//update the default settings object
 					//so getparam will look there
 					for (const key in tmp_default_settings) {
@@ -1235,10 +1384,12 @@
 					}
 					init_page();
 				};
-				xhr.onerror  = function() {
+				xhr.onerror = function() {
+					clog("network", "default settings request failed with code", xhr.status);
 					init_page();
 				};
 				xhr.onabort = function() {
+					clog("network", "default settings request aborted");
 					init_page();
 				};
 				xhr.send();

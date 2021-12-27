@@ -9,20 +9,11 @@ html, body {
 	background-position: center center;
 	background-repeat: no-repeat;
 	background-size: cover;
-
-	/*禁止选定*/
-	-moz-user-select:none; /*火狐*/
-	-webkit-user-select:none; /*webkit浏览器*/
-	-ms-user-select:none; /*IE10*/
-	-khtml-user-select:none; /*早期浏览器*/
-	user-select:none;
-
-	touch-action: none;
-
 }
 
 div.window canvas {
 	touch-action: none;
+	border-radius: 0 0 3px 3px;
 }
 
 body.desktop {
@@ -50,7 +41,7 @@ div#disconnect_form {
 	position: fixed;
 	top: 0; right: 0; bottom: 0; left: 0;
 	opacity: 0.5;
-	z-index: 100000;
+	z-index: 10;
 	text-align: center;
 	padding-top: 3em;
 }
@@ -65,6 +56,9 @@ div#disconnect_form {
 	color: white;
 	line-height: 1.5em;
 	height: 1.5em;
+}
+#progress-bar {
+	height: 2em;
 }
 canvas {
 	border: none;
@@ -107,13 +101,9 @@ canvas {
 	border-width : 1px;
 	border-style : solid;
 	box-shadow : 0px 10px 25px rgba(0, 0, 0, 0.5);
+	border-radius: 6px 6px 3px 3px;
 }
 
-.windowhead {
-	height: 30px;
-	color: #000000;
-	background-color: #ffffff;
-}
 .windowicon {
 	display: inline-block;
 	position: absolute;
@@ -126,6 +116,7 @@ canvas {
 	background-color: transparent;
 }
 .windowtitle {
+	font-family: Arial, Helvetica, sans-serif;
 	display: inline-block;
 	float: left;
 	position: absolute;
@@ -157,8 +148,17 @@ canvas {
 }
 div.windowinfocus {
 	z-index: 5000;
-	background-color: white;
 }
+.windowhead {
+	height: 30px;
+	color: #000000;
+	background-color: #A0A0A0;
+	border-bottom: 1px solid #C0C0C0;
+}
+div.windowinfocus div.windowhead {
+	background-color: #ffffff;
+}
+
 .modal {
 	z-index: 20000;
 }
@@ -199,10 +199,13 @@ div.windowinfocus {
 	width: 600px;
 	height: auto;
 	z-index: 10001;
-	background-color: white;
 	transition: height 0.5s, opacity 0.5s, top 0.5s, box-shadow 0.5s, bottom 0.5s;
-	box-shadow: 0 1rem 2rem rgba(21, 36, 48, 0.75);
 	overflow: hidden;
+	padding: 40px;
+	visibility: hidden;
+}
+.notifications .alert {
+	visibility: visible;
 }
 .notification_icon {
 	max-width: 128px;
@@ -213,13 +216,14 @@ div.windowinfocus {
 }
 .notification_buttons {
 	clear: both;
-	float: right;
+	margin: 10px 0px 0px auto;
 	font-weight: 500;
 	font-size: 1.2rem;
+	height: 2em;
 }
 .notification_button {
 	cursor: pointer;
-	float: left;
+	float: right;
 	margin: 5px;
 	padding: 5px;
 	border: 1px solid black;
@@ -240,13 +244,16 @@ div.windowinfocus {
 }
 @media screen {
 	.notifications .alert {
-		border-radius: 10;
+		box-shadow: 0 1rem 2rem rgba(21, 36, 48, 0.75);
+		background-color: white;
+		overflow: visible;
+		border-radius: 8px;
 		text-align: center;
 		padding: .5rem;
 		opacity: 40;
-		margin-top: -2rem;
+		margin-top: -10rem;
 		position: relative;
-		transform: translateY(2rem);
+		transform: translateY(10rem);
 		transition: left 0.5s, margin 0.5s, opacity 0.5s, transform 0.5s;
 	}
 }
@@ -265,14 +272,16 @@ div.windowinfocus {
 	font-size: .9rem;
 	text-overflow: ellipsis;
 	line-height: 1rem;
-	max-height: 2rem;
-	overflow: hidden;
+	max-height: 5rem;
 }
 .notifications .alert span.title{
 	margin: 1rem;
 	font-weight: 600;
 	font-size: 1.3rem;
 	line-height: 1.3rem;
+}
+.notifications .alert span.message{
+	text-align: left;
 }
 .notifications .alert span a {
 	text-decoration: none;
@@ -281,9 +290,9 @@ div.windowinfocus {
 	width: 2rem;
 	position: absolute;
 	right: 1rem;
-	top: 50%;
+	top: 1em;
 	transform: scale(1, 1) translateY(-50%);
-	font-size: 1.5rem;
+	font-size: 2rem;
 	transition: margin 0.5s, opacity 0.5s, transform 0.5s;
 	text-align: center;
 	cursor: pointer;
@@ -369,6 +378,86 @@ table#sessiondata td {
 	padding-right: 10px;
 }
 
+.simple-keyboard {
+	z-index: 100000;
+}
+
+#login-overlay {
+	position: fixed;
+	display: none;
+	width: 100%;
+	height: 100%;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: rgba(0, 0, 0, 0.7);
+	z-index: 20;
+	cursor: pointer;
+}
+#login-box {
+	height: 320px;
+	width: 480px;
+	margin: auto;
+	margin-top: 20px;
+	position: relative;
+	z-index: 3;
+	background: #D8D8D8;
+	border-radius: 20px;
+	padding: 20px;
+}
+#login-innerbox {
+	margin: auto;
+	height: 100%;
+	z-index: 3;
+	background: #E8E8E8;
+	border-radius: 20px;
+	text-align: center;
+}
+#login-header {
+	font-size: 2em;
+	clear: both;
+	display: inline-block;
+	margin: 0.5em;
+}
+#login-innerbox input {
+	font-size: 1.5em;
+	clear: both;
+	display: inline-block;
+	margin: 0.5em;
+	padding: 2px;
+	border: 2px solid #101010;
+	border-radius: 4px;
+}
+#password-box {
+	background: url("../icons/authentication.png") no-repeat;
+	margin-left: 2em;
+	margin-right: 2em;
+}
+#login-buttons {
+	margin: 2em;
+}
+.login-button {
+	margin: 1em;
+	padding: 10px 32px;
+	font-size: 18px;
+	line-height: 1.3333333;
+	border-radius: 6px;
+	color: #fff;
+	background-color: #5cb85c;
+	border-color: #4cae4c;
+	display: inline-block;
+	text-align: center;
+	white-space: nowrap;
+	vertical-align: middle;
+	touch-action: manipulation;
+	cursor: pointer;
+	user-select: none;
+	background-image: none;
+	border: 1px solid transparent;
+	border-radius: 4px;
+}
+
 @media screen {
 	.notifications .alert.visible {
 		margin-top: 0;
@@ -376,6 +465,7 @@ table#sessiondata td {
 		transform: translateY(0);
 	}
 	.notifications .alert.hidden {
+		overflow: hidden;
 		margin-top: -2.125rem;
 		z-index: -1;
 	}
