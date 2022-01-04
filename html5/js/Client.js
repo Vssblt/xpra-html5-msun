@@ -20,6 +20,8 @@ const CLIPBOARD_IMAGES = true;
 const CLIPBOARD_EVENT_DELAY = 100;
 const DECODE_WORKER = !Utilities.isMobile();
 const rencode_ok = rencode && rencode_selftest();
+const SHOW_START_MENU = true;
+
 
 function XpraClient(container) {
 	// the container div is the "screen" on the HTML page where we
@@ -127,6 +129,7 @@ XpraClient.prototype.init_state = function(container) {
 	this.browser_language_change_embargo_time = 0;
 	this.key_layout = null;
 	this.last_keycode_pressed = 0;
+	this.last_key_packet = [];
 	// mouse
 	this.last_button_event = [-1, false, -1, -1];
 	this.mousedown_event = null;
@@ -138,6 +141,7 @@ XpraClient.prototype.init_state = function(container) {
 	this.scroll_reverse_x = false;
 	this.scroll_reverse_y = false;
 	// clipboard
+	this.clipboard_direction = default_settings["clipboard_direction"] || "both";
 	this.clipboard_datatype = null;
 	this.clipboard_buffer = "";
 	this.clipboard_server_buffers = {};
@@ -210,6 +214,7 @@ XpraClient.prototype.init_state = function(container) {
 	const div = document.getElementById("screen");
 	function on_mousescroll(e) {
 		me.on_mousescroll(e);
+		return e.preventDefault();
 	}
 	if (Utilities.isEventSupported("wheel")) {
 		div.addEventListener('wheel',			on_mousescroll, false);
@@ -494,7 +499,7 @@ XpraClient.prototype.open_protocol = function() {
 	uri += this.path;
 	// do open
 	this.uri = uri;
-	this.on_connection_progress("Opening WebSocket connection", uri, 60);
+	this.on_connection_progress("Opening WebSocket connection", uri, 50);
 	this.protocol.open(uri);
 };
 
@@ -877,11 +882,8 @@ XpraClient.prototype.do_keyb_process = function(pressed, event) {
 		unpress_now = true;
 	}
 
-	//if (keyname=="Control_L" || keyname=="Control_R")
-	this._poll_clipboard(event);
-
 	let allow_default = false;
-	if (this.clipboard_enabled) {
+	if (this.clipboard_enabled && client.clipboard_direction !== "to-server") {
 		//allow some key events that need to be seen by the browser
 		//for handling the clipboard:
 		let clipboard_modifier_keys = ["Control_L", "Control_R", "Shift_L", "Shift_R"];
@@ -933,7 +935,9 @@ XpraClient.prototype.do_keyb_process = function(pressed, event) {
 		const me = this;
 		setTimeout(function () {
 			while (me.key_packets.length>0) {
-				me.send(me.key_packets.shift());
+				var key_packet = me.key_packets.shift();
+				me.last_key_packet = key_packet;
+				me.send(key_packet);
 			}
 		}, delay);
 	}
@@ -1066,12 +1070,22 @@ XpraClient.prototype.emit_connection_established = function(event_type) {
 /**
  * Hello
  */
-XpraClient.prototype._send_hello = function() {
+XpraClient.prototype._send_hello = function(counter) {
 	if (this.decode_worker==null) {
-		this.clog("waiting for decode worker to finish initializing");
+		counter = (counter || 0);
+		if (counter==0) {
+			this.on_connection_progress("Waiting for decode worker", "", 90);
+			this.clog("waiting for decode worker to finish initializing");
+		}
+		else if (counter>100) {
+			//we have waited 10 seconds or more...
+			//continue without:
+			this.do_send_hello(null, null);
+		}
+		//try again later:
 		const me = this;
 		setTimeout(function() {
-			me._send_hello();
+			me._send_hello(counter+1);
 		}, 100);
 	}
 	else {
@@ -1153,7 +1167,6 @@ XpraClient.prototype._make_hello_base = function() {
 		"steal"						: this.steal,
 		"client_type"				: "HTML5",
 		"websocket.multi-packet"	: true,
-		"xdg-menu-update"			: true,
 		"setting-change"			: true,
 		"username" 					: this.username,
 		"display"					: this.server_display || "",
@@ -1175,6 +1188,11 @@ XpraClient.prototype._make_hello_base = function() {
 		"ping-echo-sourceid"		: true,
 		"vrefresh"					: this.vrefresh,
 	});
+	if (SHOW_START_MENU) {
+		this._update_capabilities({
+			"xdg-menu-update"			: true,
+			});
+	}
 	if (this.bandwidth_limit>0) {
 		this._update_capabilities({
 			"bandwidth-limit"	: this.bandwidth_limit,
@@ -1442,8 +1460,13 @@ XpraClient.prototype.do_window_mouse_click = function(e, window, pressed) {
 	if (this.server_readonly || this.mouse_grabbed || !this.connected) {
 		return;
 	}
+	// Skip processing if clicked on float menu
+	if ($(e.target).attr("id") === "float_menu" || $(e.target).parents("#float_menu").length > 0) {
+		this.debug("clicked on float_menu, skipping event handler", e);
+		return;
+	}
 	let send_delay = 0;
-	if (this._poll_clipboard(e)) {
+	if (client.clipboard_direction !== "to-server" && this._poll_clipboard(e)) {
 		send_delay = CLIPBOARD_EVENT_DELAY;
 	}
 	const mouse = this.getMouse(e, window),
@@ -1562,6 +1585,9 @@ XpraClient.prototype.do_window_mouse_scroll = function(e, window) {
 
 
 XpraClient.prototype._poll_clipboard = function(e) {
+	if (this.clipboard_enabled === false) {
+		return;
+	}
 	//see if the clipboard contents have changed:
 	if (this.clipboard_pending) {
 		//we're still waiting to set the clipboard..
@@ -1603,6 +1629,9 @@ XpraClient.prototype._poll_clipboard = function(e) {
 };
 
 XpraClient.prototype.read_clipboard_text = function() {
+	if (this.clipboard_enabled === false) {
+		return;
+	}
 	const client = this;
 	client.debug("clipboard", "read_clipboard()");
 	//warning: this can take a while,
@@ -1645,6 +1674,22 @@ XpraClient.prototype._window_set_focus = function(win) {
 	if (client.focus == wid) {
 		return;
 	}
+
+	// Keep DESKTOP-type windows per default setttings lower than all other windows.
+	// Only allow focus if all other windows are minimized.
+	if (default_settings !== undefined && default_settings.auto_fullscreen_desktop_class !== undefined && default_settings.auto_fullscreen_desktop_class.length > 0) {
+		var auto_fullscreen_desktop_class = default_settings.auto_fullscreen_desktop_class;
+		if (win.windowtype == "DESKTOP" && win.metadata['class-instance'].includes(auto_fullscreen_desktop_class)) {
+			var any_visible = false;
+			for (let i in client.id_to_window) {
+				const iwin = client.id_to_window[i];
+				if (iwin.wid == win.wid) continue;
+				any_visible ||= !iwin.minimized;
+			}
+			if (any_visible) return;
+		}
+	}
+
 	const top_stacking_layer = Object.keys(client.id_to_window).length;
 	const old_stacking_layer = win.stacking_layer;
 	const had_focus = client.focus;
@@ -1675,6 +1720,19 @@ XpraClient.prototype._window_set_focus = function(win) {
 	}
 	//client._set_favicon(wid);
 };
+
+/*
+ * detect DESKTOP-type window from settings
+ */
+XpraClient.prototype.is_window_desktop = function(win) {
+	if (default_settings !== undefined && default_settings.auto_fullscreen_desktop_class !== undefined && default_settings.auto_fullscreen_desktop_class.length > 0) {
+		var auto_fullscreen_desktop_class = default_settings.auto_fullscreen_desktop_class;
+		if (win.windowtype == "DESKTOP" && win.metadata['class-instance'].includes(auto_fullscreen_desktop_class)) {
+			return true;
+		}
+	}
+	return false;
+}
 
 /*
  * packet processing functions start here
@@ -1980,11 +2038,12 @@ XpraClient.prototype._process_hello = function(packet, ctx) {
 			}
 		}
 	}
-	ctx.xdg_menu = hello["xdg-menu"];
-	if (ctx.xdg_menu) {
-		ctx.process_xdg_menu();
+	if (SHOW_START_MENU) {
+		ctx.xdg_menu = hello["xdg-menu"];
+		if (ctx.xdg_menu) {
+			ctx.process_xdg_menu();
+		}
 	}
-
 
 	ctx.server_is_desktop = Boolean(hello["desktop"]);
 	ctx.server_is_shadow = Boolean(hello["shadow"]);
@@ -2119,11 +2178,12 @@ XpraClient.prototype.process_xdg_menu = function() {
 XpraClient.prototype._process_setting_change = function(packet, ctx) {
 	const setting = packet[1],
 		value = packet[2];
-	if (setting=="xdg-menu") {
+	if (setting=="xdg-menu" && SHOW_START_MENU) {
 		ctx.xdg_menu = value;
 		if (ctx.xdg_menu) {
 			ctx.process_xdg_menu();
 		}
+		$('#startmenuentry').show();
 	}
 };
 
@@ -2904,6 +2964,25 @@ XpraClient.prototype._process_eos = function(packet, ctx) {
 
 
 XpraClient.prototype.request_redraw = function(win) {
+
+	// Force fullscreen on a a given window name from the provided settings
+	if (default_settings !== undefined && default_settings.auto_fullscreen !== undefined && default_settings.auto_fullscreen.length > 0) {
+		var pattern = new RegExp(".*" + default_settings.auto_fullscreen + ".*");
+		if (win.fullscreen === false && win.metadata.title.match(pattern)) {
+			clog("auto fullscreen window: " + win.metadata.title);
+			win.set_fullscreen(true);
+			win.screen_resized();
+		}
+	}
+
+	// Make a DESKTOP-type window fullscreen automatically.
+	// This resizes things like xfdesktop according to the window size.
+	if (win.fullscreen === false && client.is_window_desktop(win)) {
+		clog("auto fullscreen desktop window: " + win.metadata.title);
+		win.set_fullscreen(true);
+		win.screen_resized();
+	}
+
 	if (document.hidden) {
 		this.debug("draw", "not redrawing, document.hidden=", document.hidden);
 		return;

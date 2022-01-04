@@ -1,0 +1,143 @@
+xpra-html5 (5.0-r1107-1) UNRELEASED; urgency=low
+  * TODO
+
+ -- Antoine Martin antoine@xpra.org  Mon, 20 Dec 2021 18:17:40 +0700 +700
+
+xpra-html5 (4.5.2-r1106-1) UNRELEASED; urgency=low
+  * fix toolbar position
+  * install default settings in /etc/xpra/html5-client/
+  * image decoding time accounting
+  * handle scaled screen updates
+  * skip re-connecting when the error is likely to be permanent
+  * more helpful disconnection messages
+  * ensure we timeout if the websocket connection fails
+  * provide an easy way to prevent unwanted connections (ie: xpra.org)
+  * fix decode worker sanity checks, validate jpeg, png and webp
+  * decode worker errors with legacy packet encoders
+  * validate all encodings
+  * window title string decoding errors
+  * create directories as needed when installing
+  * css syntax error
+  * better support for relative URLs (proxied configurations)
+  * window resize offset bug, minimization bugs
+  * force xz compression for DEB packages (zstd support missing from repository webhost)
+  * compress harder with brotli
+  * remove unnecessary time wrapper
+  * try harder to detect the correct screen refresh rate
+
+ -- Antoine Martin antoine@xpra.org  Fri, 17 Dec 2021 19:50:00 +0700 +700
+
+xpra-html5 (4.5.1-r1045-1) UNRELEASED; urgency=low
+  * workaround Firefox bug in image decoder
+  * allow AES and SSL to be combined
+  * support multiple authentication challenges
+
+ -- Antoine Martin antoine@xpra.org  Thu, 23 Sep 2021 19:20:49 +0700 +700
+
+xpra-html5 (4.5-r1031-1) UNRELEASED; urgency=low
+  * prompt for passwords
+  * fix AES errors when connecting via the dialog
+
+ -- Antoine Martin antoine@xpra.org  Wed, 15 Sep 2021 23:09:23 +0700 +700
+
+xpra-html5 (4.4-r1017-1) UNRELEASED; urgency=low
+  * encryption:
+    - support more AES modes: CBC, CFB and CTR
+    - use secure random numbers
+  * core:
+    - decode screen updates in a dedicated worker thread
+      (except on Mobile devices due to strange compatibility issues)
+    - switch to pure javascript lz4 implementation
+      (fixes compatibility issues with browsers, encryption options, etc)
+  * misc:
+    - notifications geometry and styling
+    - fix zero-copy web worker regression from 4.3
+    - use zero-copy for transferring audio buffers from the worker
+
+ -- Antoine Martin antoine@xpra.org  Fri, 03 Sep 2021 20:56:45 +0700 +700
+
+xpra-html5 (4.3-r962-1) UNRELEASED; urgency=low
+  * build and packaging:
+    - installation with python2 build environment
+    - create symlinks for some fonts
+    - more reliable git branch detection
+  * rencode packet encoder:
+    - new, clean javascript implementation
+    - remove workarounds for Safari, encryption, compression, etc
+    - handle byte arrays natively without copying
+  * geometry fixes:
+    - option to adjust viewport to screen width via scaling
+    - window visibility adjustements no longer snap to the sides
+    - server errors for override-redirect windows offsets
+    - try harder to get override-redirect windows to close
+  * keyboard:
+    - don't show the on-screen keyboard on non-mobile devices
+    - fix keyboard language to keymap matcher
+    - Ukranian keyboard layout should use 'ua'
+  * re-connect:
+    - don't start a new session when re-connecting
+    - fix disconnections after re-connecting
+    - don't try to reconnect when shutting down the server
+  * connect dialog:
+    - start and start-desktop now work with or without command
+    - missing session, category and command icons with latest google chrome
+    - pass w3c validation without any warnings
+  * cosmetic:
+    - scale window icons to fit in the title bar
+    - use sans-serif font for window title
+    - change titlebar focused / unfocused colours
+    - make window corners round
+    - try to scale application cursors to match window zoom
+  * misc:
+    - audio debugging was wrongly enabled (extra CPU usage and lag)
+    - remove http mp3 stream audio support
+    - log disconnection messages
+    - prevent console errors with Internet Explorer
+
+ -- Antoine Martin antoine@xpra.org  Mon, 09 Aug 2021 23:41:28 +0700 +700
+
+xpra-html5 (4.2-r889-1) UNRELEASED; urgency=low
+  * select session attributes from list of options exposed by the server
+  * detect vertical refresh rate
+  * hide on-screen keyboard by default on non-mobile devices
+  * tell server to prefer encodings with native decoders
+  * updated documentation
+  * build and packaging fixes, add easy 'deb' and 'rpm' build targets
+  * support older versions of brotli
+  * fix missing clipboard events
+  * fix window focus tracking issues
+  * fix AES encryption (broken by rencoder)
+
+ -- Antoine Martin <antoine@xpra.org>  Tue, 18 May 2021 23:26:59 +0700
+
+xpra-html5 (4.1.2-1) UNRELEASED; urgency=low
+  * build and packaging fixes
+
+ -- Antoine Martin <antoine@xpra.org>  Fri, 02 Apr 2021 11:08:52 +0700
+
+xpra-html5 (4.1.1-3) UNRELEASED; urgency=low
+  * must bump the version in the control file (yet another place..)
+
+ -- Antoine Martin <antoine@xpra.org>  Wed, 31 Mar 2021 00:43:05 +0700
+
+xpra-html5 (4.1.1-2) UNRELEASED; urgency=low
+  * use the correct 'architecture' value 'all'
+
+ -- Antoine Martin <antoine@xpra.org>  Wed, 31 Mar 2021 00:20:40 +0700
+
+xpra-html5 (4.1.1-1) UNRELEASED; urgency=low
+  * packaging fixes
+
+ -- Antoine Martin <antoine@xpra.org>  Mon, 29 Mar 2021 10:37:58 +0700
+
+xpra-html5 (4.1-1) UNRELEASED; urgency=low
+  * split from xpra's repository
+  * open print dialog
+  * added documentation (installation, connection options, authentication, etc)
+  * build option for platforms without any minifiers
+  * add on screen keyboard
+  * better connection diagnostic messages
+  * download connection files and generate connection URIs
+  * support for rgb24 pixel encoding
+
+ -- Antoine Martin <antoine@xpra.org>  Mon, 29 Mar 2021 10:37:58 +0700

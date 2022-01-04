@@ -83,6 +83,9 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata, override_re
 	// scaling for client display width override
 	this.scale = scale;
 
+	// Icon cache
+	this.icon = null;
+
 	// get offsets
 	this.leftoffset = parseInt(jQuery(this.div).css('border-left-width'), 10);
 	this.rightoffset = parseInt(jQuery(this.div).css('border-right-width'), 10);
@@ -233,21 +236,6 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata, override_re
 	// create the spinner overlay div
 	jQuery(this.div).prepend('<div id="spinner'+String(wid)+'" class="spinneroverlay"><div class="spinnermiddle"><div class="spinner"></div></div></div>');
 	this.spinnerdiv = jQuery('#spinner'+String(wid));
-
-	// listen for mouse wheel events on my window
-	const div = document.getElementById(wid);
-	function on_mousescroll(e) {
-		me.on_mousescroll(e);
-	}
-	if (Utilities.isEventSupported("wheel")) {
-		div.addEventListener('wheel',			on_mousescroll, false);
-	}
-	else if (Utilities.isEventSupported("mousewheel")) {
-		div.addEventListener('mousewheel',		on_mousescroll, false);
-	}
-	else if (Utilities.isEventSupported("DOMMouseScroll")) {
-		div.addEventListener('DOMMouseScroll',	on_mousescroll, false); // for Firefox
-	}
 
 	this.png_cursor_data = null;
 	this.pointer_down = -1;
@@ -400,6 +388,16 @@ XpraWindow.prototype.updateFocus = function() {
 		// set focused style to div
 		jQuery(this.div).addClass("windowinfocus");
 
+		// Update window title
+		jQuery("title").text(location.pathname.replaceAll("/","") + ": " + this.title);
+
+		// Update the icon
+		if (this.icon !== null) {
+			const src = this.update_icon(this.icon.width, this.icon.height, this.icon.encoding, this.icon.img_data);
+			jQuery("#favicon").attr("href", src);
+		} else {
+			jQuery("#favicon").attr("href", "favicon.png");
+		}
 	} else {
 		// set not in focus style
 		jQuery(this.div).removeClass("windowinfocus");
@@ -1056,6 +1054,14 @@ XpraWindow.prototype.handle_mouse_click = function(button, pressed, mx, my, modi
 
 
 XpraWindow.prototype.update_icon = function(width, height, encoding, img_data) {
+	// Cache the icon.
+	this.icon = {
+		width: width,
+		height: height,
+		encoding: encoding,
+		img_data: img_data
+	};
+
 	let src = "favicon.png";
 	if (encoding=="png") {
 		//move title to the right:
