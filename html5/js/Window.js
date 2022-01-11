@@ -98,15 +98,6 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata, override_re
 	this.mouse_down_cb = mouse_down_cb || null;
 	this.mouse_up_cb = mouse_up_cb || null;
 	this.mouse_scroll_cb = mouse_scroll_cb || null;
-	jQuery(this.canvas).mousedown(function (e) {
-		me.on_mousedown(e);
-	});
-	jQuery(this.canvas).mouseup(function (e) {
-		me.on_mouseup(e);
-	});
-	jQuery(this.canvas).mousemove(function (e) {
-		me.on_mousemove(e);
-	});
 
 	this.geometry_cb = geometry_cb || null;
 	this.window_closed_cb = window_closed_cb || null;
@@ -236,43 +227,99 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata, override_re
 	// create the spinner overlay div
 	jQuery(this.div).prepend('<div id="spinner'+String(wid)+'" class="spinneroverlay"><div class="spinnermiddle"><div class="spinner"></div></div></div>');
 	this.spinnerdiv = jQuery('#spinner'+String(wid));
-
+	
 	this.png_cursor_data = null;
-	this.pointer_down = -1;
-	this.pointer_last_x = 0;
-	this.pointer_last_y = 0;
+	this.pointer_moving = 0;
+	this.primmary_pointer = null;
+	this.nonprimmary_pointer = null;
+	this.is_scrolling = 0;
+	this.is_moving = 0;
 	if (window.PointerEvent) {
 		this.canvas.addEventListener("pointerdown", function(ev) {
 			me.debug("mouse", "pointerdown:", ev);
+			console.log("down");
 			if (ev.pointerType=="touch") {
-				me.pointer_down = ev.pointerId;
-				me.pointer_last_x = ev.offsetX;
-				me.pointer_last_y = ev.offsetY;
+				if (ev.isPrimary == false)
+				{
+					me.is_scrolling = 1;
+					me.nonprimmary_pointer = ev;
+				} else {
+					me.primmary_pointer = ev;
+				}
+			} else {
+				me.on_mousedown(ev);
 			}
 		});
 		this.canvas.addEventListener("pointermove", function(ev) {
 			me.debug("mouse", "pointermove:", ev);
-			if (me.pointer_down==ev.pointerId) {
-				const dx = ev.offsetX-me.pointer_last_x;
-				const dy = ev.offsetY-me.pointer_last_y;
-				me.pointer_last_x = ev.offsetX;
-				me.pointer_last_y = ev.offsetY;
-				const mult = 20.0*(window.devicePixelRatio || 1);
-				ev.wheelDeltaX = Math.round(dx*mult);
-				ev.wheelDeltaY = Math.round(dy*mult);
-				on_mousescroll(ev);
+			if (ev.pointerType == "touch")
+			{
+				if ( me.is_scrolling == 1 ) {
+					var dx = 0;
+					var dy = 0;
+					console.log(ev.pointerId);
+					if ( ev.pointerId == 0 )
+					{
+						dx = Math.abs( ev.screenX - me.nonprimmary_pointer.screenX) - Math.abs(me.primmary_pointer.screenX - me.nonprimmary_pointer.screenX);
+						dy =  Math.abs(me.primmary_pointer.screenY - me.nonprimmary_pointer.screenY) - Math.abs( ev.screenY - me.nonprimmary_pointer.screenY);
+						me.primmary_pointer = ev;
+					} else {
+						dx = Math.abs( me.primmary_pointer.screenX - ev.screenX) - Math.abs(me.primmary_pointer.screenX - me.nonprimmary_pointer.screenX);
+						dy = Math.abs(me.primmary_pointer.screenY - me.nonprimmary_pointer.screenY) - Math.abs( me.primmary_pointer.screenY - ev.screenY);
+						me.nonprimmary_pointer = ev;
+					}
+					var mult = 30.0*(window.devicePixelRatio || 1);
+					ev.wheelDeltaX = Math.round(dx*mult);
+					ev.wheelDeltaY = Math.round(dy*mult);
+					me.on_mousescroll(ev);
+				} else {
+					if ( me.is_moving == 0 )
+					{
+						console.log("moving init");
+						me.is_moving = 1;
+						me.on_mousedown(me.primmary_pointer);
+						me.on_mousemove(ev);
+					} else {
+						me.on_mousemove(ev);
+					}
+				}
+			} else {
+				me.on_mousemove(ev);
 			}
 		});
 		this.canvas.addEventListener("pointerup", function(ev) {
 			me.debug("mouse", "pointerup:", ev);
-			me.pointer_down = -1;
+			console.log("up");
+			if (ev.pointerType == "touch")
+			{
+				if (me.is_moving == 0 && me.is_scrolling == 0)
+				{
+					me.on_mousedown(ev);
+					me.on_mouseup(ev);
+				} else {
+					me.is_moving = 0;
+					me.is_scrolling = 0;
+					me.on_mouseup(ev);
+				}
+			} else {
+				me.on_mouseup(ev);
+			}
 		});
 		this.canvas.addEventListener("pointercancel", function(ev) {
-			me.debug("mouse", "pointercancel:", ev);
-			me.pointer_down = -1;
+			console.log("cancel");
+			me.is_moving = 0; 
+			me.is_scrolling = 0;
+			me.on_mouseup(ev);
 		});
-		this.canvas.addEventListener("pointerout", function(ev) {
-			me.debug("mouse", "pointerout:", ev);
+	} else {
+		jQuery(this.canvas).mousedown(function (e) {
+			me.on_mousedown(e);
+		});
+		jQuery(this.canvas).mouseup(function (e) {
+			me.on_mouseup(e);
+		});
+		jQuery(this.canvas).mousemove(function (e) {
+			me.on_mousemove(e);
 		});
 	}
 
