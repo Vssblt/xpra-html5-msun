@@ -230,8 +230,8 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata, override_re
 	
 	this.png_cursor_data = null;
 	this.pointer_moving = 0;
-	this.primmary_pointer = null;
-	this.nonprimmary_pointer = null;
+	this.primary_pointer = null;
+	this.nonprimary_pointer = null;
 	this.is_scrolling = 0;
 	this.is_moving = 0;
 	if (window.PointerEvent) {
@@ -241,9 +241,9 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata, override_re
 				if (ev.isPrimary == false)
 				{
 					me.is_scrolling = 1;
-					me.nonprimmary_pointer = ev;
+					me.nonprimary_pointer = ev;
 				} else {
-					me.primmary_pointer = ev;
+					me.primary_pointer = ev;
 				}
 			} else {
 				me.on_mousedown(ev);
@@ -256,15 +256,15 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata, override_re
 				if ( me.is_scrolling == 1 ) {
 					var dx = 0;
 					var dy = 0;
-					if ( ev.pointerId == 0 )
+					if ( ev.isPrimary )
 					{
-						dx = Math.abs( ev.screenX - me.nonprimmary_pointer.screenX) - Math.abs(me.primmary_pointer.screenX - me.nonprimmary_pointer.screenX);
-						dy =  Math.abs(me.primmary_pointer.screenY - me.nonprimmary_pointer.screenY) - Math.abs( ev.screenY - me.nonprimmary_pointer.screenY);
-						me.primmary_pointer = ev;
+						dx = Math.abs( ev.screenX - me.nonprimary_pointer.screenX) - Math.abs(me.primary_pointer.screenX - me.nonprimary_pointer.screenX);
+						dy =  Math.abs(me.primary_pointer.screenY - me.nonprimary_pointer.screenY) - Math.abs( ev.screenY - me.nonprimary_pointer.screenY);
+						me.primary_pointer = ev;
 					} else {
-						dx = Math.abs( me.primmary_pointer.screenX - ev.screenX) - Math.abs(me.primmary_pointer.screenX - me.nonprimmary_pointer.screenX);
-						dy = Math.abs(me.primmary_pointer.screenY - me.nonprimmary_pointer.screenY) - Math.abs( me.primmary_pointer.screenY - ev.screenY);
-						me.nonprimmary_pointer = ev;
+						dx = Math.abs( me.primary_pointer.screenX - ev.screenX) - Math.abs(me.primary_pointer.screenX - me.nonprimary_pointer.screenX);
+						dy = Math.abs(me.primary_pointer.screenY - me.nonprimary_pointer.screenY) - Math.abs( me.primary_pointer.screenY - ev.screenY);
+						me.nonprimary_pointer = ev;
 					}
 					var mult = 30.0*(window.devicePixelRatio || 1);
 					ev.wheelDeltaX = Math.round(dx*mult);
@@ -274,7 +274,7 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata, override_re
 					if ( me.is_moving == 0 )
 					{
 						me.is_moving = 1;
-						me.on_mousedown(me.primmary_pointer);
+						me.on_mousedown(me.primary_pointer);
 						me.on_mousemove(ev);
 					} else {
 						me.on_mousemove(ev);
