@@ -41,8 +41,8 @@
     <!--
 		<script type="text/javascript" src="js/lib/aurora/mp3.js"></script>
 		<script type="text/javascript" src="js/lib/aurora/flac.js"></script>
-		<script type="text/javascript" src="js/lib/aurora/aac.js"></script>
 		-->
+		<script type="text/javascript" src="js/lib/circle-progress.js"></script>
     <script type="text/javascript" src="js/lib/aurora/aurora-xpra.js"></script>
 
     <script type="text/javascript" src="js/lib/FileSaver.js"></script>
@@ -75,7 +75,13 @@
     <div id="progress" class="overlay" style="display: none">
         <p id="progress-label"></p>
         <p id="progress-details"></p>
-        <progress id="progress-bar" max="100" value="10"></progress>
+        <div class="col-sm-4">
+		      <div class="progressbar">
+            <div class="second circle" data-percent="10">
+              <strong></strong>
+            </div>
+          </div>
+		    </div>
     </div>
 
     <div id="login-overlay">
@@ -242,6 +248,29 @@
     </div>
 
     <script>
+        function animateElements(percent) {
+            $('.progressbar').each(function () {
+                var elementPos = $(this).offset().top;
+                var topOfWindow = $(window).scrollTop();
+                //var percent = $(this).find('.circle').attr('data-percent');
+                console.log(percent);
+                var animate = $(this).data('animate');
+                if (elementPos < topOfWindow + $(window).height() - 30 && !animate) {
+                    $(this).data('animate', true);
+                    $(this).find('.circle').circleProgress({
+                        // startAngle: -Math.PI / 2,
+                        value: percent / 100,
+                        size : 400,
+                        thickness: 15,
+                        fill: {
+                            color: '#9E77E2'
+                        }
+                    }).on('circle-animation-progress', function (event, progress, stepValue) {
+                        $(this).find('strong').text((stepValue*100).toFixed(0) + "%");
+                    }).stop();
+                }
+            });
+        }
         const default_settings = {};
         const getparam = function(prop) {
             let v = Utilities.getparam(prop);
@@ -646,7 +675,7 @@
                 }
                 $('#progress-label').text(state || " ");
                 $('#progress-details').text(details || " ");
-                $('#progress-bar').val(progress);
+                animateElements(progress);
                 const progress_value = progress;
                 if (progress_timer) {
                     window.clearTimeout(progress_timer);

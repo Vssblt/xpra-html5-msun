@@ -310,7 +310,7 @@ XpraClient.prototype.cdebug = function() {
 
 
 XpraClient.prototype.init = function(ignore_blacklist) {
-	this.on_connection_progress("正在初始化", "", 20);
+	this.on_connection_progress("正在初始化...", "请稍候", 20); 
 	this.init_audio(ignore_blacklist);
 	this.init_packet_handlers();
 	this.init_keyboard();
@@ -383,7 +383,7 @@ XpraClient.prototype.connect = function() {
 	if (this.ssl) {
 		details += " with ssl";
 	}
-	this.on_connection_progress("正在连接至服务器", details, 40);
+	this.on_connection_progress("正在连接至服务器...", details, i + 20);
 	// open the web socket, started it in a worker if available
 	// check we have enough information for encryption
 	if(this.encryption && ((!this.encryption_key) || (this.encryption_key == ""))) {
@@ -499,7 +499,7 @@ XpraClient.prototype.open_protocol = function() {
 	uri += this.path;
 	// do open
 	this.uri = uri;
-	this.on_connection_progress("正在打开 WebSocket", uri, 50);
+	this.on_connection_progress("正在打开 WebSocket ...", uri, 50);
 	this.protocol.open(uri);
 };
 
@@ -1074,7 +1074,7 @@ XpraClient.prototype._send_hello = function(counter) {
 	if (this.decode_worker==null) {
 		counter = (counter || 0);
 		if (counter==0) {
-			this.on_connection_progress("正在等待解码器", "", 90);
+			this.on_connection_progress("正在等待解码器...", "请稍候", 90); 
 			this.clog("waiting for decode worker to finish initializing");
 		}
 		else if (counter>100) {
@@ -1744,7 +1744,7 @@ XpraClient.prototype.on_open = function() {
 
 XpraClient.prototype._process_open = function(packet, ctx) {
 	// call the send_hello function
-	ctx.on_connection_progress("WebSocket 连接成功", "", 80);
+	ctx.on_connection_progress("WebSocket 连接成功...", "请稍候", 80); 
 	// wait timeout seconds for a hello, then bomb
 	ctx.schedule_hello_timer();
 	ctx._send_hello();
@@ -2089,7 +2089,7 @@ XpraClient.prototype._process_hello = function(packet, ctx) {
 	// Drop start_new_session to avoid creating new displays
 	// on reconnect
 	ctx.start_new_session = null;
-	ctx.on_connection_progress("会话已打开", "", 100);
+	ctx.on_connection_progress("会话已打开", "请稍候", 100); 
 	ctx.on_connect();
 	ctx.connected = true;
 };
