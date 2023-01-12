@@ -95,7 +95,7 @@
      * @type {string}
      * @default 'rgba(0, 0, 0, .1)'
      */
-    emptyFill: 'rgba(50, 50, 50, 1)',
+    emptyFill: 'rgba(0, 0, 0, .1)',
 
     /**
      * jQuery Animation config.
@@ -438,8 +438,7 @@
      * @returns {number}
      */
     getThickness: function() {
-      return this.size / 6;
-      //return $.isNumeric(this.thickness) ? this.thickness : this.size / 14;
+      return $.isNumeric(this.thickness) ? this.thickness : this.size / 14;
     },
 
     /**

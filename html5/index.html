@@ -258,16 +258,19 @@
                 if (elementPos < topOfWindow + $(window).height() - 30 && !animate) {
                     $(this).data('animate', true);
                     $(this).find('.circle').circleProgress({
-                        // startAngle: -Math.PI / 2,
+                        startAngle: -Math.PI / 2,
                         value: percent / 100,
                         size : 400,
-                        thickness: 15,
+                        thickness: 80,
                         fill: {
                             color: '#9E77E2'
-                        }
+                        },
+                        emptyFill: '#323232',
                     }).on('circle-animation-progress', function (event, progress, stepValue) {
                         $(this).find('strong').text((stepValue*100).toFixed(0) + "%");
                     }).stop();
+                } else {
+                    $(this).find('.circle').circleProgress('value', percent / 100);
                 }
             });
         }
@@ -905,10 +908,10 @@
                             const value = props[name];
                             add_prop(name, value);
                         }
-                        window.location = url;
+                        //window.location = url;
                     } else {
                         // if we didn't submit through the form, silently redirect to the connect gui
-                        window.location = "connect.html";
+                        //window.location = "connect.html";
                     }
                 }
             }
