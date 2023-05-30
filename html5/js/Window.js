@@ -130,7 +130,6 @@ function XpraWindow(client, canvas_state, wid, x, y, w, h, metadata, override_re
 				'<span class="windowicon"><img class="windowicon" id="windowicon' + String(wid) + '" /></span> '+
 				'<span class="windowtitle" id="title' + String(wid) + '">' + this.title + '</span> '+
 				'<span class="windowbuttons"> '+
-				'<span id="minimize' + String(wid) + '"><img src="icons/minimize.png" /></span> '+
 				'<span id="maximize' + String(wid) + '"><img src="icons/maximize.png" /></span> '+
 				'<span id="close' + String(wid) + '"><img src="icons/close.png" /></span> '+
 				'</span></div>');
