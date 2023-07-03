@@ -54,25 +54,66 @@ div#disconnect_form {
   padding-top: 3em;
 }
 #progress-label {
-  font-size: 1.4em;
+  font-size: 2.6em;
   color: white;
   line-height: 2em;
   height: 2em;
 }
 #progress-details {
-  font-size: 1.2em;
+  font-size: 1.6em;
   color: white;
   line-height: 1.5em;
   height: 1.5em;
+  line-height: 1.6em;
+  height: 1.6em;
 }
 #progress-bar {
   height: 2em;
+  width: 50em;
 }
 canvas {
   border: none;
   padding: 0;
   margin: 0;
 }
+
+.circle {
+  width: 320px;
+  margin: 6px 6px 20px;
+  display: inline-block;
+  position: relative;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.circle canvas {
+  vertical-align: top;
+  width: 320px !important;
+}
+
+.circle strong {
+  position: absolute;
+  top: 120px;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  line-height: 60px;
+  font-size: 50px;
+  color: white;
+}
+
+.circle strong i {
+  font-style: normal;
+  font-size: 0.6em;
+  font-weight: normal;
+}
+
+.circle span {
+  display: block;
+  color: white;
+  margin-top: 24px;
+}
+
 #pasteboard {
   position: fixed;
   top: -40px;
