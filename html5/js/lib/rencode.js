@@ -190,11 +190,11 @@ function rencode_uint8(a) {
 	const len_len = len_str.length;
 	const u8a = new Uint8Array(len_len+1+len);
 	for (let i=0; i<len_len; ++i) {
-		u8a[1+i] = len_str.charCodeAt(i);
+		u8a[i] = len_str.charCodeAt(i);
 	}
 	const SEPARATOR = "/";
-	u8a[1+len_len] = SEPARATOR.charCodeAt(0);
-	u8a.set(a, len_len+2);
+	u8a[len_len] = SEPARATOR.charCodeAt(0);
+	u8a.set(a, len_len+1);
 	return u8a;
 }
 
@@ -249,14 +249,14 @@ function rencode_bool(v) {
 	}
 }
 
-function encode_none() {
+function rencode_none() {
 	return new Uint8Array([RENCODE.CHR_NONE]);
 }
 
 //turn this flag off to use "rencodeplus" when encoding
 //this will send Uint8Array as 'binary'
 //(decoding is always supported since not having it is free)
-rencode_legacy_mode = true;
+let rencode_legacy_mode = false;
 function rencodelegacy(obj) {
 	rencode_legacy_mode = true;
 	return rencode(obj);
@@ -310,20 +310,18 @@ function rdecode_string(dec) {
 	}
 	const binary = dec.buf[dec.pos+len]==RENCODE.SLASH_CHARCODE;
 	dec.pos += len+1;
+	const bytes = dec.buf.subarray(dec.pos, dec.pos+str_len);
+	dec.pos += str_len;
 	if (binary) {
-		const bytes = dec.buf.subarray(dec.pos, dec.pos+str_len);
-		dec.pos += str_len;
 		return bytes;
 	}
 	if (str_len==0) {
 		return "";
 	}
-	const sub = dec.buf.subarray(dec.pos, dec.pos+str_len);
-	dec.pos += str_len;
 	if (rencode_legacy_mode) {
-		return Uint8ToString(sub);
+		return Uint8ToString(bytes);
 	}
-	return utf8ByteArrayToString(sub)
+	return utf8ByteArrayToString(bytes)
 }
 function Uint8ToString(u8a){
 	const CHUNK_SZ = 0x8000;
@@ -396,8 +394,8 @@ function rdecode_intq(dec) {
 	}
 	else {
 		//oh, IE...
-		const left =  this.getUint32(byteOffset);
-		const right = this.getUint32(byteOffset+4);
+		const left =  dv.getInt32(0);
+		const right = dv.getUint32(4);
 		s = 2**32*left + right;
 	}
 	dec.pos += 9;

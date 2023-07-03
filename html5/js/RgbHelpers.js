@@ -4,80 +4,71 @@
 
 //deals with zlib or lz4 pixel compression
 //as well as converting rgb24 to rb32 and
-//re-striding the pixel data if needed
+//re-striding the pixel data if needed so that lines are not padded
+//(that is: the rowstride must be width*4)
 //this function modifies the packet data directly
 function decode_rgb(packet) {
-	const width = packet[4],
-		height = packet[5],
-		coding = packet[6],
-		rowstride = packet[9];
-	let data = packet[7];
-	let options = {};
-	if (packet.length>10)
-		options = packet[10];
-	if (options!=null && options["zlib"]>0) {
-		data = new Zlib.Inflate(data).decompress();
-		delete options["zlib"];
-	}
-	else if (options!=null && options["lz4"]>0) {
-		data = lz4.decode(data);
-		delete options["lz4"];
-	}
-	let target_stride = width*4;
-	//this.debug("draw", "got ", data.length, "bytes of", coding, "to paint with stride", rowstride, ", target stride", target_stride);
-	if (coding=="rgb24") {
-		packet[9] = target_stride;
-		packet[6] = "rgb32";
-		return rgb24_to_rgb32(data, width, height, rowstride, target_stride);
-	}
-	//coding=rgb32
-	if (target_stride==rowstride) {
-		return new Uint8Array(data);
-	}
-	//re-striding
-	//might be quicker to copy 32bit at a time using Uint32Array
-	//and then casting the result?
-	const uint = new Uint8Array(target_stride*height);
-	let i = 0,
-		j = 0,
-		psrc = 0,
-		pdst = 0;
-	for (i=0; i<height; i++) {
-		psrc = i*rowstride;
-		pdst = i*target_stride;
-		for (j=0; j<target_stride; j++) {
-			uint[pdst++] = data[psrc++];
-		}
-	}
-	return uint;
+  const width = packet[4];
+  const height = packet[5];
+  const coding = packet[6];
+  const rowstride = packet[9];
+  let data = packet[7];
+  const options = packet[10] || {};
+  if (options["zlib"] > 0) {
+    throw "zlib compression is not supported";
+  }
+  if (options["lz4"] > 0) {
+    data = lz4.decode(data);
+    delete options["lz4"];
+  }
+  if (coding == "rgb24") {
+    packet[9] = width * 4;
+    packet[6] = "rgb32";
+    return rgb24_to_rgb32(data, width, height, rowstride);
+  }
+  //coding=rgb32
+  if (rowstride == width * 4) {
+    return new Uint8Array(data);
+  }
+  //re-striding
+  //might be quicker to copy 32bit at a time using Uint32Array
+  //and then casting the result?
+  const uint = new Uint8Array(width * height * 4);
+  let psrc = 0;
+  let pdst = 0;
+  for (let row_index = 0; row_index < height; row_index++) {
+    psrc = row_index * rowstride;
+    pdst = row_index * width * 4;
+    for (let column_index = 0; column_index < width * 4; column_index++) {
+      uint[pdst++] = data[psrc++];
+    }
+  }
+  return uint;
 }
 
-function rgb24_to_rgb32(data, width, height, rowstride, target_stride) {
-	const uint = new Uint8Array(target_stride*height);
-	let i = 0,
-		j = 0,
-		l = data.length;
-	if (rowstride==width*3) {
-		//faster path, single loop:
-		while (i<l) {
-			uint[j++] = data[i++];
-			uint[j++] = data[i++];
-			uint[j++] = data[i++];
-			uint[j++] = 255;
-		}
-	}
-	else {
-		let psrc = 0,
-			pdst = 0;
-		for (i=0; i<height; i++) {
-			psrc = i*rowstride;
-			for (j=0; j<width; j++) {
-				uint[pdst++] = data[psrc++];
-				uint[pdst++] = data[psrc++];
-				uint[pdst++] = data[psrc++];
-				uint[pdst++] = 255;
-			}
-		}
-	}
-	return uint;
+function rgb24_to_rgb32(data, width, height, rowstride) {
+  const uint = new Uint8Array(width * height * 4);
+  let source_index = 0;
+  let target_index = 0;
+  if (rowstride == width * 3) {
+    //faster path, single loop:
+    const source_length = data.length;
+    while (source_index < source_length) {
+      uint[target_index++] = data[source_index++];
+      uint[target_index++] = data[source_index++];
+      uint[target_index++] = data[source_index++];
+      uint[target_index++] = 255;
+    }
+  } else {
+    for (let row_index = 0; row_index < height; row_index++) {
+      source_index = row_index * rowstride;
+      for (let column_index = 0; column_index < width; column_index++) {
+        uint[target_index++] = data[source_index++];
+        uint[target_index++] = data[source_index++];
+        uint[target_index++] = data[source_index++];
+        uint[target_index++] = 255;
+      }
+    }
+  }
+  return uint;
 }

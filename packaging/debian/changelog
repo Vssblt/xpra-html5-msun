@@ -1,7 +1,89 @@
-xpra-html5 (5.0-r1107-1) UNRELEASED; urgency=low
+xpra-html5 (9.0-r1452-1) UNRELEASED; urgency=low
   * TODO
 
- -- Antoine Martin antoine@xpra.org  Mon, 20 Dec 2021 18:17:40 +0700 +700
+ -- Antoine Martin antoine@xpra.org  Sat, 06 May 2023 19:26:50 +0700 +700
+
+xpra-html5 (8.0-r1425-1) UNRELEASED; urgency=low
+  * disable scroll encoding with offscreen decode worker
+  * screenshots cannot be used with the offscreen api
+  * don't close windows when re-connecting or when closing the browser window
+  * closing windows is only a request
+  * hide options when they are not available: `shutdown` and `file upload`
+  * remote logging arguments missing
+  * fix initiate-move-resize
+  * cursor fixes: cursor updates and geometry
+  * fix vertical scroll reverse
+  * minor cleanups:
+    - unused variables
+    - unused function
+    - unused statements
+    - document empty functions
+    - linter cleanup
+    - use a more correct datatype
+    - improved syntax
+    - use the preferred keywords for variable declaration
+
+ -- Antoine Martin antoine@xpra.org  Sat, 06 May 2023 19:19:03 +0700 +700
+
+xpra-html5 (7.0-r1424-1) UNRELEASED; urgency=low
+  * unable to move undecorated / CSD windows
+  * throttle video decoder to prevent flooding
+  * disable offscreen decode worker with Firefox to prevent flickering
+  * workaround for setuptools breakage in version 61 and later
+  * native video decoding is fast enough not to require much downscaling](https://github.com/Xpra-org/xpra-html5/commit/ed4b0d72f40864cea4fb4b91b5c400085eb44fa8)
+  * propagate error messages
+  * truncate large clipboard buffers in log messages
+  * `scroll` draw packets can hang the connection
+  * prefer h264 and remove vp9
+  * spurious audio stop errors
+  * make stream download URL easier to embed
+  * missing scroll wheel events
+  * avoid errors if the window's title is unset
+  * remove support for software video decoding
+  * don't enable clipboard with Safari and SSL
+  * provide more useful screen name to the server
+  * cursor display and scaling issues
+  * workaround for older versions of Safari
+
+ -- Antoine Martin antoine@xpra.org  Sun, 12 Mar 2023 22:22:28 +0700 +700
+
+xpra-html5 (6.0-r1378-1) UNRELEASED; urgency=low
+  * refactorings, cleanups, github CI, etc - JanCVanB
+  * split decode from paint, PR202 - TijZwa
+  * experimental native decoding, PR200 - TijZwa
+  * require ES6
+  * move to structured `hello` packet data
+  * support `hjsmin` minifier - arrowd
+  * updated installer script: #190
+  * support for chunked file transfers (large files): #120
+  * modal windows should not be minimized
+
+ -- Antoine Martin antoine@xpra.org  Mon, 17 Oct 2022 15:44:18 +0700 +700
+
+xpra-html5 (5.0-r1275-1) UNRELEASED; urgency=low
+  * auto-fullscreen, alt-tabbing with window previews
+  * decode images using an offscreen worker thread
+  * decode `avif` images, grayscale and palette `png`
+  * handle `void` paint packets
+  * increase default non-vsynced target framerate
+  * tell servers to use 'scroll' encoding less aggressively
+  * keycloak authentication (requires xpra server version 4.4 or later)
+  * support pre-mapped windows (requires xpra server version 4.4 or later)
+  * support clipboard pasting file into the session
+  * detect inverted vertical scrolling (ie: on MacOS)
+  * improved dead key mapping for non-us layouts
+  * 64-bit rencode decoding bug with Safari (and IE)
+  * notification errors with bencoder
+  * avoid popping up the on-screen keyboard on mobile touch events
+  * updated on-screen simple-keyboard UI and file saver library
+  * shifted characters with simple-keyboard
+  * prevent stuck keys
+  * focus and raise windows when their title bar is clicked
+  * spurious focus events when minimizing windows
+  * fix AES encryption when used with authentication and rencodeplus
+  * build script refactoring
+
+ -- Antoine Martin antoine@xpra.org  Wed, 11 May 2022 16:55:59 +0700 +700
 
 xpra-html5 (4.5.2-r1106-1) UNRELEASED; urgency=low
   * fix toolbar position

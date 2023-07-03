@@ -1,10 +1,10 @@
 # This file is part of Xpra.
-# Copyright (C) 2010-2021 Antoine Martin <antoine@xpra.org>
+# Copyright (C) 2010-2022 Antoine Martin <antoine@xpra.org>
 # Xpra is released under the terms of the GNU GPL v2, or, at your option, any
 # later version. See the file COPYING for details.
 
-%define version 5.0
-%define release 1.r1084%{?dist}
+%define version 9.0
+%define release 1.r1452%{?dist}
 %define minifier uglifyjs
 %define python python3
 
@@ -21,22 +21,22 @@ Source:				xpra-html5-%{version}.tar.xz
 BuildArch:			noarch
 BuildRoot:			%{_tmppath}/%{name}-%{version}-root
 Conflicts:			xpra < 2.1
-%if 0%{?el8}%{?fedora}
-BuildRequires:		uglify-js
-BuildRequires:		python3
-%else
+%if 0%{?el7}
 %define minifier ""
 %define python python2
 BuildRequires:		python2
+%else
+BuildRequires:		uglify-js
+BuildRequires:		python3
 %endif
 #don't depend on this package,
 #so we can also install on a pure RHEL distro:
-%if 0%{?el8}%{?el7}
-BuildRequires:		centos-logos
-%if 0%{?el8}
-BuildRequires:		centos-backgrounds
-Recommends:			centos-logos
-Recommends:			centos-backgrounds
+%if 0%{?el9}%{?el8}%{?el7}
+BuildRequires:		system-logos
+%if 0%{?el9}%{?el8}
+BuildRequires:		system-backgrounds
+Recommends:			system-logos
+Recommends:			system-backgrounds
 %endif
 %else
 BuildRequires:		desktop-backgrounds-compat
@@ -57,12 +57,8 @@ or by any other web server.
 %install
 mkdir -p %{buildroot}%{_datadir}/xpra/www
 mkdir -p %{buildroot}%{_sysconfdir}/xpra/html5-client
-%{python} ./setup.py install %{buildroot}%{_datadir}/xpra/www/ %{minifier}
-# Move and symlink configuration files
-cp %{buildroot}%{_datadir}/xpra/www/default-settings.txt %{buildroot}%{_sysconfdir}/xpra/html5-client/
-rm %{buildroot}%{_datadir}/xpra/www/default-settings.txt
-ln -sf %{_sysconfdir}/xpra/html5-client/default-settings.txt %{buildroot}%{_datadir}/xpra/www/default-settings.txt
-# Ensure there are no executeable files:
+%{python} ./setup.py install %{buildroot} %{_datadir}/xpra/www/ %{_sysconfdir}/xpra/html5-client %{minifier}
+# Ensure there are no executable files:
 find %{buildroot}%{_datadir}/xpra/www/ -type f -exec chmod 0644 {} \;
 mkdir -p %{buildroot}/usr/share/doc/xpra-html5/
 %if 0%{?el8}%{?fedora}
@@ -77,12 +73,87 @@ rm -rf $RPM_BUILD_ROOT
 %{_sysconfdir}/xpra/html5-client
 %{_datadir}/xpra/www
 %if 0%{?el8}%{?fedora}
-%doc xpra-html5/LICENSE
+%doc LICENSE
 %endif
 
 %changelog
-* Mon Dec 20 2021 Antoine Martin <antoine@xpra.org> 5.0-1107-1
+* Sat May 06 2023 Antoine Martin <antoine@xpra.org> 9.0-1452-1
 - TODO
+
+* Sat May 06 2023 Antoine Martin <antoine@xpra.org> 8.0-1425-1
+- disable scroll encoding with offscreen decode worker
+- screenshots cannot be used with the offscreen api
+- don't close windows when re-connecting or when closing the browser window
+- closing windows is only a request
+- hide options when they are not available: `shutdown` and `file upload`
+- remote logging arguments missing
+- fix initiate-move-resize
+- cursor fixes: cursor updates and geometry
+- fix vertical scroll reverse
+- minor cleanups:
+   unused variables
+   unused function
+   unused statements
+   document empty functions
+   linter cleanup
+   use a more correct datatype
+   improved syntax
+   use the preferred keywords for variable declaration
+
+
+* Sun Mar 12 2023 Antoine Martin <antoine@xpra.org> 7.0-1424-1
+- unable to move undecorated / CSD windows
+- throttle video decoder to prevent flooding
+- disable offscreen decode worker with Firefox to prevent flickering
+- workaround for setuptools breakage in version 61 and later
+- native video decoding is fast enough not to require much downscaling](https://github.com/Xpra-org/xpra-html5/commit/ed4b0d72f40864cea4fb4b91b5c400085eb44fa8)
+- propagate error messages
+- truncate large clipboard buffers in log messages
+- `scroll` draw packets can hang the connection
+- prefer h264 and remove vp9
+- spurious audio stop errors
+- make stream download URL easier to embed
+- missing scroll wheel events
+- avoid errors if the window's title is unset
+- remove support for software video decoding
+- don't enable clipboard with Safari and SSL
+- provide more useful screen name to the server
+- cursor display and scaling issues
+- workaround for older versions of Safari
+
+* Mon Oct 17 2022 Antoine Martin <antoine@xpra.org> 6.0-1378-1
+- refactorings, cleanups, github CI, etc - JanCVanB
+- split decode from paint, PR202 - TijZwa
+- experimental native decoding, PR200 - TijZwa
+- require ES6
+- move to structured `hello` packet data
+- support `hjsmin` minifier - arrowd
+- updated installer script: #190
+- support for chunked file transfers (large files): #120
+- modal windows should not be minimized
+
+* Wed May 11 2022 Antoine Martin <antoine@xpra.org> 5.0-1237-1
+- auto-fullscreen, alt-tabbing with window previews
+- decode images using an offscreen worker thread
+- decode `avif` images, grayscale and palette `png`
+- handle `void` paint packets
+- increase default non-vsynced target framerate
+- tell servers to use 'scroll' encoding less aggressively
+- keycloak authentication (requires xpra server version 4.4 or later)
+- support pre-mapped windows (requires xpra server version 4.4 or later)
+- support clipboard pasting file into the session
+- detect inverted vertical scrolling (ie: on MacOS)
+- improved dead key mapping for non-us layouts
+- 64-bit rencode decoding bug with Safari (and IE)
+- notification errors with bencoder
+- avoid popping up the on-screen keyboard on mobile touch events
+- updated on-screen simple-keyboard UI and file saver library
+- shifted characters with simple-keyboard
+- prevent stuck keys
+- focus and raise windows when their title bar is clicked
+- spurious focus events when minimizing windows
+- fix AES encryption when used with authentication and rencodeplus
+- build script refactoring
 
 * Fri Dec 17 2021 Antoine Martin <antoine@xpra.org> 4.5.2-1106-1
 - fix toolbar position
