@@ -499,7 +499,7 @@ XpraClient.prototype.open_protocol = function() {
 	uri += this.path;
 	// do open
 	this.uri = uri;
-	this.on_connection_progress("正在打开 WebSocket ...", uri, 50);
+	this.on_connection_progress("正在打开链接 ...", uri, 50);
 	this.protocol.open(uri);
 };
 
@@ -1074,7 +1074,7 @@ XpraClient.prototype._send_hello = function(counter) {
 	if (this.decode_worker==null) {
 		counter = (counter || 0);
 		if (counter==0) {
-			this.on_connection_progress("正在等待解码器...", "请稍候", 90); 
+			this.on_connection_progress("正在等待三维重建...", "请稍候", 90); 
 			this.clog("waiting for decode worker to finish initializing");
 		}
 		else if (counter>100) {
@@ -1744,7 +1744,7 @@ XpraClient.prototype.on_open = function() {
 
 XpraClient.prototype._process_open = function(packet, ctx) {
 	// call the send_hello function
-	ctx.on_connection_progress("WebSocket 连接成功...", "请稍候", 80); 
+	ctx.on_connection_progress("连接成功...", "请稍候", 80); 
 	// wait timeout seconds for a hello, then bomb
 	ctx.schedule_hello_timer();
 	ctx._send_hello();
