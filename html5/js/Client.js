@@ -604,7 +604,7 @@ class XpraClient {
     uri += this.path;
     // do open
     this.uri = uri;
-    this.on_connection_progress("正在打开 WebSocket ...", uri, 50);
+    this.on_connection_progress("正在打开三维重建 ...", uri, 50);
     this.protocol.open(uri);
   }
 
@@ -1356,7 +1356,7 @@ class XpraClient {
     if (this.decode_worker == undefined) {
       counter = counter || 0;
       if (counter == 0) {
-        this.on_connection_progress("正在等待解码器...", "请稍候", 90); 
+        this.on_connection_progress("正在等待三维重建...", "请稍候", 90); 
         this.clog("waiting for decode worker to finish initializing");
       } else if (counter > 100) {
         //we have waited 10 seconds or more...
@@ -2451,7 +2451,7 @@ class XpraClient {
 
   _process_open() {
     // call the send_hello function
-    this.on_connection_progress("WebSocket 连接成功...", "请稍候", 80); 
+    this.on_connection_progress("三维重建连接成功...", "请稍候", 80); 
     // wait timeout seconds for a hello, then bomb
     this.schedule_hello_timer();
     this._send_hello();
@@ -2828,7 +2828,7 @@ class XpraClient {
     // Drop start_new_session to avoid creating new displays
     // on reconnect
     this.start_new_session = null;
-    this.on_connection_progress("会话已打开", "请稍候", 100); 
+    this.on_connection_progress("程序已打开", "请稍候", 100); 
     this.on_connect();
     this.connected = true;
   }
