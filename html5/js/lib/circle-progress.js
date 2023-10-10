@@ -518,7 +518,8 @@
 
     if (configOrCommand == 'value') {
       if (!firstInstance)
-        throw Error('Calling "value" method on not initialized instance is forbidden');
+        //throw Error('Calling "value" method on not initialized instance is forbidden');
+        return 0;
       if (typeof commandArgument == 'undefined') {
         return firstInstance.getValue();
       } else {
