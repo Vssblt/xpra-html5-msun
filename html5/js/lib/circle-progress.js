@@ -222,12 +222,12 @@
       canvas.height = this.size;
       this.ctx = canvas.getContext('2d');
 
-      if (window.devicePixelRatio > 1) {
-        var scaleBy = window.devicePixelRatio;
-        canvas.style.width = canvas.style.height = this.size + 'px';
-        canvas.width = canvas.height = this.size * scaleBy;
-        this.ctx.scale(scaleBy, scaleBy);
-      }
+      // if (window.devicePixelRatio > 1) {
+      //   var scaleBy = window.devicePixelRatio;
+      //   canvas.style.width = canvas.style.height = this.size + 'px';
+      //   canvas.width = canvas.height = this.size * scaleBy;
+      //   this.ctx.scale(scaleBy, scaleBy);
+      // }
     },
 
     /**
