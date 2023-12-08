@@ -57,7 +57,7 @@ class XpraClient {
     // assign callback for window resize event
     if (window.jQuery) {
       jQuery(window).resize(
-        jQuery.debounce(250, (e) => this._screen_resized(e))
+        jQuery.debounce(100, (e) => this._screen_resized(e))
       );
     }
 
@@ -130,7 +130,7 @@ class XpraClient {
     this.bandwidth_limit = 0;
     this.reconnect = true;
     this.reconnect_count = 5;
-    this.reconnect_in_progress = false;
+    this.reconnect_in_progress = true;
     this.reconnect_delay = 1000; //wait 1 second before retrying
     this.reconnect_attempt = 0;
     this.swap_keys = Utilities.isMacOS();
@@ -690,12 +690,12 @@ class XpraClient {
     if (!this.connected) {
       return;
     }
-    if (
-      this.container.clientWidth == this.desktop_width &&
-      this.container.clientHeight == this.desktop_height
-    ) {
-      return;
-    }
+    // if (
+    //   this.container.clientWidth == this.desktop_width &&
+    //   this.container.clientHeight == this.desktop_height
+    // ) {
+    //   return;
+    // }
     this.desktop_width = this.container.clientWidth;
     this.desktop_height = this.container.clientHeight;
     const newsize = [this.desktop_width, this.desktop_height];

@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="css/spinner.css" />
 
     <script>
+    setInterval(function() {window.jQuery(document).resize();},1000);
     if (!Object.hasOwn) {
         Object.hasOwn = Object.call.bind(Object.hasOwnProperty);
     }
@@ -408,7 +409,7 @@
                   $(this).find('.circle').circleProgress({
                       startAngle: -Math.PI / 2,
                       value: percent / 100,
-                      size : 400,
+                      size : 300,
                       thickness: 80,
                       fill: {
                           color: '#9E77E2'
