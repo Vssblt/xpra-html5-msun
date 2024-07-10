@@ -354,35 +354,86 @@ class XpraWindow {
     if (!window.PointerEvent) {
       return;
     }
-    canvas.addEventListener("pointerdown", (event_) => {
-      this.debug("mouse", "pointerdown:", event_);
-      if (event_.pointerType == "touch") {
-        this.pointer_down = event_.pointerId;
-        this.pointer_last_x = event_.offsetX;
-        this.pointer_last_y = event_.offsetY;
+    canvas.addEventListener("pointerdown", function(ev) {
+      me.debug("mouse", "pointerdown:", ev);
+      console.log("down");
+      if (ev.pointerType == "touch") {
+        if (ev.isPrimary == false) {
+          me.is_scrolling = 1;
+          me.nonprimmary_pointer = ev;
+        } else {
+          me.primmary_pointer = ev;
+        }
+      } else {
+        me.on_mousedown(ev);
       }
     });
-    canvas.addEventListener("pointermove", (event_) => {
-      this.debug("mouse", "pointermove:", event_);
-      if (this.pointer_down == event_.pointerId) {
-        const dx = event_.offsetX - this.pointer_last_x;
-        const dy = event_.offsetY - this.pointer_last_y;
-        this.pointer_last_x = event_.offsetX;
-        this.pointer_last_y = event_.offsetY;
-        const mult = 20 * (window.devicePixelRatio || 1);
-        event_.wheelDeltaX = Math.round(dx * mult);
-        event_.wheelDeltaY = Math.round(dy * mult);
-        this.on_mousescroll(event_);
+
+    canvas.addEventListener("pointermove", function(ev) {
+      me.debug("mouse", "pointermove:", ev);
+      if (ev.pointerType == "touch") {
+        if (me.is_scrolling == 1) {
+          var dx = 0;
+          var dy = 0;
+          console.log(ev.pointerId);
+          if (ev.pointerId == 0) {
+            dx = Math.abs(ev.screenX - me.nonprimmary_pointer.screenX) -
+                 Math.abs(me.primmary_pointer.screenX -
+                          me.nonprimmary_pointer.screenX);
+            dy = Math.abs(me.primmary_pointer.screenY -
+                          me.nonprimmary_pointer.screenY) -
+                 Math.abs(ev.screenY - me.nonprimmary_pointer.screenY);
+            me.primmary_pointer = ev;
+          } else {
+            dx = Math.abs(me.primmary_pointer.screenX - ev.screenX) -
+                 Math.abs(me.primmary_pointer.screenX -
+                          me.nonprimmary_pointer.screenX);
+            dy = Math.abs(me.primmary_pointer.screenY -
+                          me.nonprimmary_pointer.screenY) -
+                 Math.abs(me.primmary_pointer.screenY - ev.screenY);
+            me.nonprimmary_pointer = ev;
+          }
+          var mult = 30.0 * (window.devicePixelRatio || 1);
+          ev.wheelDeltaX = Math.round(dx * mult);
+          ev.wheelDeltaY = Math.round(dy * mult);
+          me.on_mousescroll(ev);
+        } else {
+          if (me.is_moving == 0) {
+            console.log("moving init");
+            me.is_moving = 1;
+            me.on_mousedown(me.primmary_pointer);
+            me.on_mousemove(ev);
+          } else {
+            me.on_mousemove(ev);
+          }
+        }
+      } else {
+        me.on_mousemove(ev);
       }
     });
-    canvas.addEventListener("pointerup", (event_) => {
-      this.debug("mouse", "pointerup:", event_);
-      this.pointer_down = -1;
+    canvas.addEventListener("pointerup", function(ev) {
+      me.debug("mouse", "pointerup:", ev);
+      console.log("up");
+      if (ev.pointerType == "touch") {
+        if (me.is_moving == 0 && me.is_scrolling == 0) {
+          me.on_mousedown(ev);
+          me.on_mouseup(ev);
+        } else {
+          me.is_moving = 0;
+          me.is_scrolling = 0;
+          me.on_mouseup(ev);
+        }
+      } else {
+        me.on_mouseup(ev);
+      }
     });
-    canvas.addEventListener("pointercancel", (event_) => {
-      this.debug("mouse", "pointercancel:", event_);
-      this.pointer_down = -1;
+    canvas.addEventListener("pointercancel", function(ev) {
+      console.log("cancel");
+      me.is_moving = 0;
+      me.is_scrolling = 0;
+      me.on_mouseup(ev);
     });
+
     canvas.addEventListener("pointerout", (event_) => {
       this.debug("mouse", "pointerout:", event_);
     });
