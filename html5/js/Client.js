@@ -383,7 +383,7 @@ XpraClient.prototype.connect = function() {
 	if (this.ssl) {
 		details += " with ssl";
 	}
-	this.on_connection_progress("正在连接至服务器...", details, i + 20);
+	// this.on_connection_progress("正在连接至服务器...", details, i + 20);
 	// open the web socket, started it in a worker if available
 	// check we have enough information for encryption
 	if(this.encryption && ((!this.encryption_key) || (this.encryption_key == ""))) {
@@ -2818,7 +2818,6 @@ XpraClient.prototype._process_notify_show = function(packet, ctx) {
 		let icon_url = "";
 		if (icon && icon[0]=="png") {
 			icon_url = "data:image/png;base64," + Utilities.ArrayBufferToBase64(icon[3]);
-			console.log("notification icon_url=", icon_url);
 		}
 		/*
 		const nactions = [];

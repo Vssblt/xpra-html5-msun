@@ -32,7 +32,7 @@ const Utilities = {
 	},
 	log : function() {
 		if (console) {
-			console.log.apply(console, arguments);
+			// console.log.apply(console, arguments);
 		}
 	},
 	debug : function() {
@@ -59,12 +59,12 @@ const Utilities = {
 	},
 	clog : function() {
 		if (console) {
-			console.log.apply(console, arguments);
+			// console.log.apply(console, arguments);
 		}
 	},
 	cdebug : function() {
 		if (console) {
-			console.debug.apply(console, arguments);
+			// console.debug.apply(console, arguments);
 		}
 	},
 
