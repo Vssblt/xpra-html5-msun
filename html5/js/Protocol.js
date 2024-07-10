@@ -231,7 +231,7 @@ class XpraProtocol {
     console.error.apply(console, arguments);
   }
   log() {
-    console.log.apply(console, arguments);
+    // console.log.apply(console, arguments);
   }
 
   do_process_receive_queue() {

@@ -186,13 +186,13 @@ onmessage = function (e) {
       xpraPaintWorker.delete_canvas(data.wid);
       break;
     case "canvas":
-      console.log(
-        "canvas transfer for window",
-        data.wid,
-        ":",
-        data.canvas,
-        data.debug
-      );
+      // console.log(
+      //   "canvas transfer for window",
+      //   data.wid,
+      //   ":",
+      //   data.canvas,
+      //   data.debug
+      // );
       if (data.canvas) {
         xpraPaintWorker.add_canvas(data.wid, data.canvas, data.debug);
       }

@@ -25337,7 +25337,7 @@ if(typeof(console) !== 'undefined' && 'log' in console) {
     // only appear to have basic console.log
     var f = function(logger, message) {
       forge.log.prepareStandardFull(message);
-      console.log(message.standardFull);
+      // console.log(message.standardFull);
     };
     logger = forge.log.makeLogger(f);
   }

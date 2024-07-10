@@ -356,7 +356,6 @@ class XpraWindow {
     }
     canvas.addEventListener("pointerdown", function(ev) {
       me.debug("mouse", "pointerdown:", ev);
-      console.log("down");
       if (ev.pointerType == "touch") {
         if (ev.isPrimary == false) {
           me.is_scrolling = 1;
@@ -375,7 +374,7 @@ class XpraWindow {
         if (me.is_scrolling == 1) {
           var dx = 0;
           var dy = 0;
-          console.log(ev.pointerId);
+          // console.log(ev.pointerId);
           if (ev.pointerId == 0) {
             dx = Math.abs(ev.screenX - me.nonprimmary_pointer.screenX) -
                  Math.abs(me.primmary_pointer.screenX -
@@ -399,7 +398,7 @@ class XpraWindow {
           me.on_mousescroll(ev);
         } else {
           if (me.is_moving == 0) {
-            console.log("moving init");
+            // console.log("moving init");
             me.is_moving = 1;
             me.on_mousedown(me.primmary_pointer);
             me.on_mousemove(ev);
@@ -413,7 +412,7 @@ class XpraWindow {
     });
     canvas.addEventListener("pointerup", function(ev) {
       me.debug("mouse", "pointerup:", ev);
-      console.log("up");
+      // console.log("up");
       if (ev.pointerType == "touch") {
         if (me.is_moving == 0 && me.is_scrolling == 0) {
           me.on_mousedown(ev);
@@ -428,7 +427,7 @@ class XpraWindow {
       }
     });
     canvas.addEventListener("pointercancel", function(ev) {
-      console.log("cancel");
+      // console.log("cancel");
       me.is_moving = 0;
       me.is_scrolling = 0;
       me.on_mouseup(ev);
