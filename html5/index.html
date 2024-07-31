@@ -22,6 +22,7 @@
 
   <script>
     // setInterval(function() {window.jQuery(document).resize();},1000);
+    document.addEventListener('contextmenu', e => { e.stopPropagation(); e.preventDefault(); });
     if (!Object.hasOwn) {
       Object.hasOwn = Object.call.bind(Object.hasOwnProperty);
     }
